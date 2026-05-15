@@ -72,15 +72,13 @@ app.get('/api/search', async (req, res) => {
         const state = stateZip[0] || '';
         const zip = stateZip[1] || '';
 
-        // Estimate unit pricing based on regional averages
-        const units = estimateUnits(state, city);
-
-        // Detect features from name/types
-        const features = detectFeatures(d.name || place.name, place.types || []);
+        const facilityName = d.name || place.name;
+        const units = estimateUnits(state, city, facilityName);
+        const features = detectFeatures(facilityName, place.types || []);
 
         return {
           id: place.place_id,
-          name: d.name || place.name,
+          name: facilityName,
           address: street,
           city,
           state,
@@ -98,9 +96,7 @@ app.get('/api/search', async (req, res) => {
           features,
           isOpen: d.opening_hours?.open_now ?? null,
           businessStatus: d.business_status || 'OPERATIONAL',
-          promo: generatePromo(d.rating, dist),
-          monthToMonth: true,
-          bookings: Math.floor(Math.random() * 20) + 3,
+          estimatedPricing: true,
         };
       } catch (err) {
         return null;
@@ -146,9 +142,8 @@ function haversine(lat1, lon1, lat2, lon2) {
   return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
 }
 
-// ── Estimate unit pricing by region ──
-function estimateUnits(state, city) {
-  // Regional price multipliers (1.0 = national avg)
+// ── Estimate unit pricing by region (deterministic per facility) ──
+function estimateUnits(state, city, facilityName) {
   const expensive = ['CA', 'NY', 'NJ', 'MA', 'CT', 'DC', 'HI'];
   const moderate = ['FL', 'TX', 'IL', 'CO', 'WA', 'OR', 'AZ', 'GA', 'VA', 'MD', 'PA'];
   let mult = 1.0;
@@ -156,16 +151,15 @@ function estimateUnits(state, city) {
   else if (moderate.includes(state)) mult = 1.1;
   else mult = 0.85;
 
-  // Add city-level variance
-  const variance = () => 0.9 + Math.random() * 0.2;
+  const v = seedRandom(facilityName || city || 'default');
 
   return [
-    { size: '5x5', price: Math.round(45 * mult * variance()) },
-    { size: '5x10', price: Math.round(75 * mult * variance()) },
-    { size: '10x10', price: Math.round(130 * mult * variance()) },
-    { size: '10x15', price: Math.round(175 * mult * variance()) },
-    { size: '10x20', price: Math.round(220 * mult * variance()) },
-    { size: '10x30', price: Math.round(300 * mult * variance()) },
+    { size: '5x5', price: Math.round(45 * mult * v), estimated: true },
+    { size: '5x10', price: Math.round(75 * mult * v), estimated: true },
+    { size: '10x10', price: Math.round(130 * mult * v), estimated: true },
+    { size: '10x15', price: Math.round(175 * mult * v), estimated: true },
+    { size: '10x20', price: Math.round(220 * mult * v), estimated: true },
+    { size: '10x30', price: Math.round(300 * mult * v), estimated: true },
   ];
 }
 
@@ -173,25 +167,19 @@ function estimateUnits(state, city) {
 function detectFeatures(name, types) {
   const features = [];
   const lower = name.toLowerCase();
-  if (/climate|cool|temperature/i.test(lower)) features.push('climate');
-  if (/24|hour|access/i.test(lower)) features.push('24hr');
-  if (/drive|vehicle/i.test(lower)) features.push('drive_up');
-  if (!features.includes('24hr')) features.push('24hr');
-  features.push('surveillance');
-  if (Math.random() > 0.4) features.push('ground');
-  if (Math.random() > 0.5) features.push('climate');
-  if (Math.random() > 0.6) features.push('drive_up');
-  return [...new Set(features)];
+  if (/climate|cool|temperature|ac |a\/c|air.?condition/i.test(lower)) features.push('climate');
+  if (/24|hour|access|anytime/i.test(lower)) features.push('24hr');
+  if (/drive.?up|drive.?in|vehicle|outdoor/i.test(lower)) features.push('drive_up');
+  if (/secur|camera|surveillance|guard|gate/i.test(lower)) features.push('surveillance');
+  if (/ground|first.?floor/i.test(lower)) features.push('ground');
+  return features;
 }
 
-// ── Generate promo based on rating/distance ──
-function generatePromo(rating, dist) {
-  const promos = [
-    'First Month Free', '50% Off First Month', 'First Month $1',
-    '3 Months 50% Off', '2 Months Free', 'No Admin Fee',
-    null, null, null
-  ];
-  return promos[Math.floor(Math.random() * promos.length)];
+// ── Estimate unit pricing by seed so same facility gets same prices ──
+function seedRandom(str) {
+  let h = 0;
+  for (let i = 0; i < str.length; i++) h = ((h << 5) - h + str.charCodeAt(i)) | 0;
+  return (((h & 0x7fffffff) % 1000) / 1000) * 0.2 + 0.9;
 }
 
 app.listen(PORT, () => {

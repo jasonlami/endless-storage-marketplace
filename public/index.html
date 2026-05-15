@@ -1243,14 +1243,14 @@
 
     // ── Sample data ──
     const SAMPLE_DATA = [
-      { id:1, name:"CubeSmart Self Storage", address:"2609 SW 28th Ln", city:"Miami", state:"FL", zip:"33133", lat:25.738, lng:-80.237, phone:"(305) 444-8880", website:"https://www.cubesmart.com", rating:4.7, reviews:284, features:["climate","24hr","surveillance","ground"], units:[{size:"5x5",price:49},{size:"5x10",price:89},{size:"10x10",price:149},{size:"10x15",price:199},{size:"10x20",price:259}], promo:"First Month Free", monthToMonth:true, bookings:12, photos:["https://images.unsplash.com/photo-1681487834818-369c5e07675a?w=600&h=400&fit=crop","https://images.unsplash.com/photo-1694601618351-dbbbb2b8934f?w=600&h=400&fit=crop","https://images.unsplash.com/photo-1609143739217-01b60dad1c67?w=600&h=400&fit=crop"] },
-      { id:2, name:"Public Storage - Coral Gables", address:"3895 SW 8th St", city:"Coral Gables", state:"FL", zip:"33134", lat:25.763, lng:-80.264, phone:"(305) 446-9096", website:"https://www.publicstorage.com", rating:4.3, reviews:167, features:["climate","surveillance","drive_up"], units:[{size:"5x5",price:55},{size:"5x10",price:95},{size:"10x10",price:165},{size:"10x20",price:285}], promo:null, monthToMonth:true, bookings:8, photos:["https://images.unsplash.com/photo-1618438502398-195e47778d6c?w=600&h=400&fit=crop","https://images.unsplash.com/photo-1638847868668-a05a2f69622f?w=600&h=400&fit=crop"] },
-      { id:3, name:"Life Storage - Coconut Grove", address:"3726 SW 28th St", city:"Miami", state:"FL", zip:"33133", lat:25.735, lng:-80.245, phone:"(305) 443-7917", website:"https://www.lifestorage.com", rating:4.8, reviews:312, features:["climate","24hr","surveillance","ground","drive_up"], units:[{size:"5x5",price:42},{size:"5x10",price:79},{size:"10x10",price:139},{size:"10x15",price:189},{size:"10x20",price:245},{size:"10x30",price:349}], promo:"50% Off First 2 Months", monthToMonth:true, bookings:19, photos:["https://images.unsplash.com/photo-1649260791830-5404cc5af05b?w=600&h=400&fit=crop","https://images.unsplash.com/photo-1662320154145-7263e998e7a2?w=600&h=400&fit=crop","https://images.unsplash.com/photo-1600718800089-353dc75b7bfd?w=600&h=400&fit=crop","https://images.unsplash.com/photo-1600181914037-b14638c1137d?w=600&h=400&fit=crop"] },
-      { id:4, name:"Extra Space Storage", address:"1001 NW 36th St", city:"Miami", state:"FL", zip:"33127", lat:25.802, lng:-80.211, phone:"(305) 573-4850", website:"https://www.extraspace.com", rating:4.5, reviews:198, features:["climate","surveillance","24hr"], units:[{size:"5x5",price:59},{size:"5x10",price:99},{size:"10x10",price:159},{size:"10x15",price:209}], promo:"First Month Half Off", monthToMonth:false, bookings:14, photos:["https://images.unsplash.com/photo-1685119166946-d4050647b0e3?w=600&h=400&fit=crop","https://images.unsplash.com/photo-1661443794148-6f4358ea4fa7?w=600&h=400&fit=crop","https://images.unsplash.com/photo-1649313522492-ffb2ab3c7dac?w=600&h=400&fit=crop"] },
-      { id:5, name:"StorQuest Self Storage", address:"220 NW 24th St", city:"Miami", state:"FL", zip:"33127", lat:25.795, lng:-80.200, phone:"(305) 571-8888", website:"https://www.storquest.com", rating:4.6, reviews:143, features:["climate","24hr","surveillance","ground"], units:[{size:"5x5",price:45},{size:"5x10",price:85},{size:"10x10",price:145},{size:"10x20",price:249}], promo:"First Month Free", monthToMonth:true, bookings:7, photos:["https://images.unsplash.com/photo-1742418028301-3f98067ee739?w=600&h=400&fit=crop","https://images.unsplash.com/photo-1649313444539-a8900c5cdc54?w=600&h=400&fit=crop"] },
-      { id:6, name:"Brickell Storage", address:"60 SW 13th St", city:"Miami", state:"FL", zip:"33130", lat:25.761, lng:-80.198, phone:"(305) 856-1500", website:"https://www.brickellstorage.com", rating:4.2, reviews:89, features:["climate","surveillance"], units:[{size:"5x5",price:69},{size:"5x10",price:119},{size:"10x10",price:189},{size:"10x15",price:249}], promo:null, monthToMonth:false, bookings:3, photos:["https://images.unsplash.com/photo-1682146262947-614e8920a36d?w=600&h=400&fit=crop"] },
-      { id:7, name:"Midgard Self Storage", address:"945 NW 1st Ct", city:"Miami", state:"FL", zip:"33136", lat:25.783, lng:-80.196, phone:"(305) 374-7227", website:"https://www.midgardstorage.com", rating:4.9, reviews:415, features:["climate","24hr","surveillance","ground","drive_up"], units:[{size:"5x5",price:39},{size:"5x10",price:75},{size:"10x10",price:135},{size:"10x15",price:179},{size:"10x20",price:239},{size:"10x30",price:329}], promo:"3 Months 50% Off", monthToMonth:true, bookings:24, photos:["https://images.unsplash.com/photo-1595050309250-3047a857b88d?w=600&h=400&fit=crop","https://images.unsplash.com/photo-1551313158-73d016a829ae?w=600&h=400&fit=crop","https://images.unsplash.com/photo-1661443803051-dc31b77fa17e?w=600&h=400&fit=crop","https://images.unsplash.com/photo-1517490232338-06b912a786b5?w=600&h=400&fit=crop","https://images.unsplash.com/photo-1649899588991-5200ba8f7f4f?w=600&h=400&fit=crop"] },
-      { id:8, name:"U-Haul Storage of Little Havana", address:"390 NW 22nd Ave", city:"Miami", state:"FL", zip:"33125", lat:25.776, lng:-80.235, phone:"(305) 642-0600", website:"https://www.uhaul.com", rating:4.0, reviews:72, features:["drive_up","surveillance"], units:[{size:"5x10",price:65},{size:"10x10",price:110},{size:"10x15",price:155},{size:"10x20",price:195}], promo:"First Month $1", monthToMonth:true, bookings:5, photos:["https://images.unsplash.com/photo-1649260791830-5404cc5af05b?w=600&h=400&fit=crop","https://images.unsplash.com/photo-1618438502398-195e47778d6c?w=600&h=400&fit=crop"] }
+      { id:1, name:"CubeSmart Self Storage", address:"2609 SW 28th Ln", city:"Miami", state:"FL", zip:"33133", lat:25.738, lng:-80.237, phone:"(305) 444-8880", website:"https://www.cubesmart.com", rating:4.7, reviews:284, features:["climate","24hr","surveillance","ground"], units:[{size:"5x5",price:49},{size:"5x10",price:89},{size:"10x10",price:149},{size:"10x15",price:199},{size:"10x20",price:259}], estimatedPricing:true, photos:["https://images.unsplash.com/photo-1681487834818-369c5e07675a?w=600&h=400&fit=crop","https://images.unsplash.com/photo-1694601618351-dbbbb2b8934f?w=600&h=400&fit=crop","https://images.unsplash.com/photo-1609143739217-01b60dad1c67?w=600&h=400&fit=crop"] },
+      { id:2, name:"Public Storage - Coral Gables", address:"3895 SW 8th St", city:"Coral Gables", state:"FL", zip:"33134", lat:25.763, lng:-80.264, phone:"(305) 446-9096", website:"https://www.publicstorage.com", rating:4.3, reviews:167, features:["climate","surveillance","drive_up"], units:[{size:"5x5",price:55},{size:"5x10",price:95},{size:"10x10",price:165},{size:"10x20",price:285}], estimatedPricing:true, photos:["https://images.unsplash.com/photo-1618438502398-195e47778d6c?w=600&h=400&fit=crop","https://images.unsplash.com/photo-1638847868668-a05a2f69622f?w=600&h=400&fit=crop"] },
+      { id:3, name:"Life Storage - Coconut Grove", address:"3726 SW 28th St", city:"Miami", state:"FL", zip:"33133", lat:25.735, lng:-80.245, phone:"(305) 443-7917", website:"https://www.lifestorage.com", rating:4.8, reviews:312, features:["climate","24hr","surveillance","ground","drive_up"], units:[{size:"5x5",price:42},{size:"5x10",price:79},{size:"10x10",price:139},{size:"10x15",price:189},{size:"10x20",price:245},{size:"10x30",price:349}], estimatedPricing:true, photos:["https://images.unsplash.com/photo-1649260791830-5404cc5af05b?w=600&h=400&fit=crop","https://images.unsplash.com/photo-1662320154145-7263e998e7a2?w=600&h=400&fit=crop","https://images.unsplash.com/photo-1600718800089-353dc75b7bfd?w=600&h=400&fit=crop","https://images.unsplash.com/photo-1600181914037-b14638c1137d?w=600&h=400&fit=crop"] },
+      { id:4, name:"Extra Space Storage", address:"1001 NW 36th St", city:"Miami", state:"FL", zip:"33127", lat:25.802, lng:-80.211, phone:"(305) 573-4850", website:"https://www.extraspace.com", rating:4.5, reviews:198, features:["climate","surveillance","24hr"], units:[{size:"5x5",price:59},{size:"5x10",price:99},{size:"10x10",price:159},{size:"10x15",price:209}], estimatedPricing:true, photos:["https://images.unsplash.com/photo-1685119166946-d4050647b0e3?w=600&h=400&fit=crop","https://images.unsplash.com/photo-1661443794148-6f4358ea4fa7?w=600&h=400&fit=crop","https://images.unsplash.com/photo-1649313522492-ffb2ab3c7dac?w=600&h=400&fit=crop"] },
+      { id:5, name:"StorQuest Self Storage", address:"220 NW 24th St", city:"Miami", state:"FL", zip:"33127", lat:25.795, lng:-80.200, phone:"(305) 571-8888", website:"https://www.storquest.com", rating:4.6, reviews:143, features:["climate","24hr","surveillance","ground"], units:[{size:"5x5",price:45},{size:"5x10",price:85},{size:"10x10",price:145},{size:"10x20",price:249}], estimatedPricing:true, photos:["https://images.unsplash.com/photo-1742418028301-3f98067ee739?w=600&h=400&fit=crop","https://images.unsplash.com/photo-1649313444539-a8900c5cdc54?w=600&h=400&fit=crop"] },
+      { id:6, name:"Brickell Storage", address:"60 SW 13th St", city:"Miami", state:"FL", zip:"33130", lat:25.761, lng:-80.198, phone:"(305) 856-1500", website:"https://www.brickellstorage.com", rating:4.2, reviews:89, features:["climate","surveillance"], units:[{size:"5x5",price:69},{size:"5x10",price:119},{size:"10x10",price:189},{size:"10x15",price:249}], estimatedPricing:true, photos:["https://images.unsplash.com/photo-1682146262947-614e8920a36d?w=600&h=400&fit=crop"] },
+      { id:7, name:"Midgard Self Storage", address:"945 NW 1st Ct", city:"Miami", state:"FL", zip:"33136", lat:25.783, lng:-80.196, phone:"(305) 374-7227", website:"https://www.midgardstorage.com", rating:4.9, reviews:415, features:["climate","24hr","surveillance","ground","drive_up"], units:[{size:"5x5",price:39},{size:"5x10",price:75},{size:"10x10",price:135},{size:"10x15",price:179},{size:"10x20",price:239},{size:"10x30",price:329}], estimatedPricing:true, photos:["https://images.unsplash.com/photo-1595050309250-3047a857b88d?w=600&h=400&fit=crop","https://images.unsplash.com/photo-1551313158-73d016a829ae?w=600&h=400&fit=crop","https://images.unsplash.com/photo-1661443803051-dc31b77fa17e?w=600&h=400&fit=crop","https://images.unsplash.com/photo-1517490232338-06b912a786b5?w=600&h=400&fit=crop","https://images.unsplash.com/photo-1649899588991-5200ba8f7f4f?w=600&h=400&fit=crop"] },
+      { id:8, name:"U-Haul Storage of Little Havana", address:"390 NW 22nd Ave", city:"Miami", state:"FL", zip:"33125", lat:25.776, lng:-80.235, phone:"(305) 642-0600", website:"https://www.uhaul.com", rating:4.0, reviews:72, features:["drive_up","surveillance"], units:[{size:"5x10",price:65},{size:"10x10",price:110},{size:"10x15",price:155},{size:"10x20",price:195}], estimatedPricing:true, photos:["https://images.unsplash.com/photo-1649260791830-5404cc5af05b?w=600&h=400&fit=crop","https://images.unsplash.com/photo-1618438502398-195e47778d6c?w=600&h=400&fit=crop"] }
     ];
 
     const FEATURE_LABELS = { climate:"Climate Controlled", drive_up:"Drive-Up", "24hr":"24hr Access", surveillance:"Surveillance", ground:"Ground Floor" };
@@ -1389,6 +1389,7 @@
       const searchLocation = parsed.location || document.getElementById('searchInput').value.trim() || 'Miami, FL';
       const data = await fetchFacilities(searchLocation);
       allFacilities = data.facilities;
+      buildHeroCarousel(allFacilities);
 
       if (data.location) map.setView([data.location.lat, data.location.lng], 12);
 
@@ -1438,13 +1439,11 @@
       const topRated = [...allFacilities].sort((a,b) => b.rating - a.rating || b.reviews - a.reviews)[0];
 
       const bestValue = allFacilities.reduce((best, f) => {
-        const score = f.rating * 20 - Math.min(...f.units.map(u => u.price)) * 0.5 - f.distance * 2 + (f.promo ? 10 : 0);
+        const score = f.rating * 20 - Math.min(...f.units.map(u => u.price)) * 0.5 - f.distance * 2;
         return score > best.score ? { facility: f, score } : best;
       }, { facility: null, score: -Infinity });
 
-      const promoCount = allFacilities.filter(f => f.promo).length;
-
-      return { avgPrice, cheapest, closest, topRated, bestValue, promoCount };
+      return { avgPrice, cheapest, closest, topRated, bestValue };
     }
 
     function renderAIInsights(aiParsed) {
@@ -1477,12 +1476,10 @@
         Top Rated: <strong>${insights.topRated.name}</strong> (${insights.topRated.rating}&#9733;, ${insights.topRated.reviews} reviews)
       </span>`;
 
-      if (insights.promoCount > 0) {
-        chips += `<span class="ai-insight">
-          <svg viewBox="0 0 24 24" fill="none" stroke="#ef4444" stroke-width="2"><path d="M20.59 13.41l-7.17 7.17a2 2 0 01-2.83 0L2 12V2h10l8.59 8.59a2 2 0 010 2.82z"/><line x1="7" y1="7" x2="7.01" y2="7"/></svg>
-          <strong>${insights.promoCount} facilities</strong> with active promos
-        </span>`;
-      }
+      chips += `<span class="ai-insight">
+        <svg viewBox="0 0 24 24" fill="none" stroke="#ef4444" stroke-width="2"><path d="M20.59 13.41l-7.17 7.17a2 2 0 01-2.83 0L2 12V2h10l8.59 8.59a2 2 0 010 2.82z"/><line x1="7" y1="7" x2="7.01" y2="7"/></svg>
+        <strong>${allFacilities.length} facilities</strong> compared near you
+      </span>`;
 
       bar.innerHTML = `<span class="ai-insight-label">&#10024; AI Insights</span><div class="ai-insights-scroll">${chips}${chips}</div>`;
       bar.classList.add('active');
@@ -1585,6 +1582,7 @@
 
       const data = await fetchFacilities(query);
       allFacilities = data.facilities;
+      buildHeroCarousel(allFacilities);
       if (data.location) map.setView([data.location.lat, data.location.lng], 12);
       applyFilters();
       renderAIInsights(null);
@@ -1758,18 +1756,16 @@
               <span class="rating-num">${f.rating}</span>
               <span class="review-count">(${f.reviews})</span>
             </div>
-            <div class="social-proof"><span class="dot"></span> Booked ${f.bookings}x this week</div>
+            ${f.isOpen !== null ? `<div class="social-proof"><span class="dot" style="background:${f.isOpen ? '#22c55e' : '#ef4444'}"></span> ${f.isOpen ? 'Open Now' : 'Closed'}</div>` : ''}
           </div>
           <div class="badge-row">
             ${getAIBadges(f).map(b => `<span class="badge ${b.cls}">${b.label}</span>`).join('')}
             ${deal ? `<span class="badge badge-deal">&#10003; ${deal}</span>` : ''}
-            ${f.promo ? `<span class="badge badge-promo">&#127381; ${f.promo}</span>` : ''}
-            ${f.bookings > 15 ? '<span class="badge badge-popular">&#128293; Popular</span>' : ''}
-            ${f.monthToMonth ? '<span class="badge badge-flex">Month-to-Month</span>' : ''}
           </div>
           <div class="card-units">
-            ${f.units.map(u => `<div class="unit-pill"><div class="size">${u.size}</div><div class="fits">${(SIZE_INFO[u.size]||{}).fits||''}</div><div class="price">$${u.price}/mo</div></div>`).join('')}
+            ${f.units.map(u => `<div class="unit-pill"><div class="size">${u.size}</div><div class="fits">${(SIZE_INFO[u.size]||{}).fits||''}</div><div class="price">${u.estimated ? '~' : ''}$${u.price}/mo</div></div>`).join('')}
           </div>
+          ${f.estimatedPricing ? '<div style="font-size:0.65rem;color:var(--gray-400);margin:-6px 0 8px 2px;">~ Estimated pricing &mdash; verify on facility site</div>' : ''}
           <div style="margin-bottom:10px;">
             <span class="price-lock-badge" onclick="event.stopPropagation(); openPriceLock('${f.id}')">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0110 0v4"/></svg>
@@ -1836,7 +1832,7 @@
           }).join('')}
           <div class="compare-row"><span class="label">Features</span><span class="value">${f.features.length}</span></div>
           <div class="compare-row"><span class="label">Reviews</span><span class="value">${f.reviews}</span></div>
-          ${f.promo ? `<div class="compare-row"><span class="label">Promo</span><span class="value" style="color:#92400e">${f.promo}</span></div>` : ''}
+          ${f.features.length ? `<div class="compare-row"><span class="label">Features</span><span class="value">${f.features.map(ft => FEATURE_LABELS[ft]||ft).join(', ')}</span></div>` : ''}
           <div style="margin-top:8px"><a href="${f.website || f.mapsUrl || '#'}" target="_blank" rel="noopener" class="btn-primary" style="font-size:0.8rem;padding:8px 14px;" onclick="trackClick('${f.id}')">View Availability</a></div>
         </div>
       `).join('');
@@ -2045,11 +2041,8 @@
           </div>
           <div class="swipe-tags">
             ${deal ? `<span class="badge badge-deal">&#10003; ${deal}</span>` : ''}
-            ${f.bookings > 15 ? '<span class="badge badge-popular">&#128293; Popular</span>' : ''}
-            ${f.monthToMonth ? '<span class="badge badge-flex">Month-to-Month</span>' : ''}
             ${f.features.map(ft => `<span class="feature-tag">${FEATURE_LABELS[ft]||ft}</span>`).join('')}
           </div>
-          ${f.promo ? `<div class="swipe-card-promo">&#127381; ${f.promo}</div>` : ''}
         </div>
       `;
       return div;
@@ -2281,37 +2274,47 @@
               document.getElementById('searchInput').value = location;
               const ta = document.getElementById('aiSearchInput');
               if (!ta.value) ta.placeholder = `e.g. "I need to store a couch and 10 boxes near ${city} under $150/month"`;
+              fetch(`/api/search?q=${encodeURIComponent(location)}`)
+                .then(r => r.json())
+                .then(result => {
+                  if (result.facilities && result.facilities.length) {
+                    buildHeroCarousel(result.facilities);
+                  }
+                }).catch(() => {});
             }
           }).catch(() => {});
       }, () => {}, { timeout: 5000, maximumAge: 300000 });
     }
 
     // ── Hero card carousel ──
-    (function initHeroCarousel() {
-      const cards = [
-        { name: 'StorSafe Miami', addr: '1250 NW 23rd St, Miami, FL', badge: 'Best Deal', stars: '4.8', dist: '2.1 mi', photo: 'https://images.unsplash.com/photo-1742418028301-3f98067ee739?w=400&h=250&fit=crop', sizes: [{ s: '5×5', p: '$49' }, { s: '10×10', p: '$89' }] },
-        { name: 'SecureSpace Doral', addr: '8700 NW 36th St, Doral, FL', badge: 'Closest', stars: '4.6', dist: '0.8 mi', photo: 'https://images.unsplash.com/photo-1618438502398-195e47778d6c?w=400&h=250&fit=crop', sizes: [{ s: '5×10', p: '$65' }, { s: '10×15', p: '$119' }] },
-        { name: 'CubeSmart Kendall', addr: '14225 SW 88th St, Miami, FL', badge: 'Top Rated', stars: '4.9', dist: '5.3 mi', photo: 'https://images.unsplash.com/photo-1662320154145-7263e998e7a2?w=400&h=250&fit=crop', sizes: [{ s: '10×10', p: '$79' }, { s: '10×20', p: '$149' }] },
-        { name: 'Public Storage Hialeah', addr: '7000 W 20th Ave, Hialeah, FL', badge: 'Price Drop', stars: '4.3', dist: '3.7 mi', photo: 'https://images.unsplash.com/photo-1685119166946-d4050647b0e3?w=400&h=250&fit=crop', sizes: [{ s: '5×5', p: '$39' }, { s: '10×10', p: '$75' }] },
-        { name: 'Extra Space Coral Gables', addr: '3700 SW 42nd Ave, Miami, FL', badge: 'Best Value', stars: '4.7', dist: '4.2 mi', photo: 'https://images.unsplash.com/photo-1595050309250-3047a857b88d?w=400&h=250&fit=crop', sizes: [{ s: '5×10', p: '$59' }, { s: '10×15', p: '$109' }] },
-      ];
+    let heroInterval = null;
+    function buildHeroCarousel(facilities) {
       const container = document.getElementById('heroCarousel');
-      cards.forEach((c, i) => {
+      container.innerHTML = '';
+      if (heroInterval) { clearInterval(heroInterval); heroInterval = null; }
+
+      const badges = ['Best Deal', 'Closest', 'Top Rated', 'Best Value', 'Lowest Price'];
+      const source = (facilities && facilities.length) ? facilities.slice(0, 5) : allFacilities.slice(0, 5);
+      if (!source.length) return;
+
+      source.forEach((f, i) => {
+        const photo = (f.photos && f.photos.length) ? f.photos[0] : 'https://images.unsplash.com/photo-1551313158-73d016a829ae?w=400&h=250&fit=crop';
+        const sizes = f.units.slice(0, 2);
         const el = document.createElement('div');
         el.className = 'hero-carousel-card';
         el.innerHTML = `
-          <div class="hc-image" style="background:url('${c.photo}') center/cover no-repeat"><span class="hc-badge">${c.badge}</span></div>
+          <div class="hc-image" style="background:url('${photo}') center/cover no-repeat"><span class="hc-badge">${badges[i] || ''}</span></div>
           <div class="hc-body">
-            <h4>${c.name}</h4>
-            <div class="hc-addr">${c.addr}</div>
-            <div class="hc-chips">${c.sizes.map(s => `<div class="hc-chip"><div class="hc-size">${s.s}</div><div class="hc-price">${s.p}/mo</div></div>`).join('')}</div>
-            <div class="hc-row"><span class="hc-stars">${'★'.repeat(Math.floor(parseFloat(c.stars)))}${'☆'.repeat(5 - Math.floor(parseFloat(c.stars)))}</span> <span class="hc-dist">${c.stars} · ${c.dist}</span></div>
+            <h4>${f.name}</h4>
+            <div class="hc-addr">${f.address}, ${f.city}, ${f.state}</div>
+            <div class="hc-chips">${sizes.map(u => `<div class="hc-chip"><div class="hc-size">${u.size}</div><div class="hc-price">~$${u.price}/mo</div></div>`).join('')}</div>
+            <div class="hc-row"><span class="hc-stars">${starsHTML(f.rating)}</span> <span class="hc-dist">${f.rating}${f.distance != null ? ` · ${f.distance} mi` : ''}</span></div>
           </div>`;
         container.appendChild(el);
       });
 
       let current = 0;
-      const total = cards.length;
+      const total = source.length;
       function positionCards() {
         const els = container.querySelectorAll('.hero-carousel-card');
         els.forEach((el, i) => {
@@ -2336,8 +2339,9 @@
         });
       }
       positionCards();
-      setInterval(() => { current = (current + 1) % total; positionCards(); }, 2800);
-    })();
+      heroInterval = setInterval(() => { current = (current + 1) % total; positionCards(); }, 2800);
+    }
+    buildHeroCarousel(SAMPLE_DATA);
 
     // ── Init ──
     initMap();
