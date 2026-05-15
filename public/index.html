@@ -1312,6 +1312,25 @@
         }
       }
 
+      if (!explicitRecommended) {
+        const dwellingMap = [
+          { re: /\b(studio|efficiency)\s*(apartment|apt)?\b/i, size: '5x10', label: 'studio' },
+          { re: /\b(1|one)[- ]?(br|bed|bedroom)\s*(apartment|apt|condo)?\b/i, size: '10x10', label: '1-bedroom' },
+          { re: /\b(2|two)[- ]?(br|bed|bedroom)\s*(apartment|apt|condo|house|home)?\b/i, size: '10x15', label: '2-bedroom' },
+          { re: /\b(3|three)[- ]?(br|bed|bedroom)\s*(apartment|apt|condo|house|home)?\b/i, size: '10x20', label: '3-bedroom' },
+          { re: /\b(4|four|5|five|6|six)[- ]?(br|bed|bedroom)\s*(house|home)?\b/i, size: '10x30', label: 'large home' },
+          { re: /\b(full|entire|whole)\s+(house|home)\b/i, size: '10x30', label: 'full home' },
+        ];
+        for (const d of dwellingMap) {
+          if (d.re.test(lower)) {
+            explicitRecommended = d.size;
+            totalSqFt = SIZE_INFO[d.size].sqft;
+            detectedItems.push(d.label);
+            break;
+          }
+        }
+      }
+
       for (const mapping of ITEM_TO_SIZE) {
         for (const item of mapping.items) {
           const regex = new RegExp(`(\\d+)?\\s*${item}(?:e?s)?\\b`, 'gi');
@@ -1365,11 +1384,11 @@
       if (locMatch) location = locMatch[1].trim().replace(/\b\w/g, l => l.toUpperCase());
 
       const features = [];
-      if (/climate|cool|temperature|ac|air.?condition/i.test(lower)) features.push('climate');
-      if (/drive.?up|drive.?in|vehicle access/i.test(lower)) features.push('drive_up');
-      if (/24.?h|all.?day|anytime/i.test(lower)) features.push('24hr');
-      if (/secure|security|camera|surveillance|safe/i.test(lower)) features.push('surveillance');
-      if (/ground|first floor/i.test(lower)) features.push('ground');
+      if (/\bclimate[- ]?(controlled?|control)\b|\btemperature[- ]?(controlled?|control)\b|\bair[- ]?condition(ed|ing)?\b|\bclimatized\b/i.test(lower)) features.push('climate');
+      if (/\bdrive[- ]?up\b|\bdrive[- ]?in\b|\bvehicle access\b/i.test(lower)) features.push('drive_up');
+      if (/\b24[- ]?hours?\b|\b24\/7\b|\ball[- ]?day access\b|\banytime access\b/i.test(lower)) features.push('24hr');
+      if (/\bsurveillance\b|\bsecurity (camera|guard|gate)\b|\bcctv\b|\bgated\b/i.test(lower)) features.push('surveillance');
+      if (/\bground[- ]?(floor|level)\b|\bfirst[- ]?floor\b/i.test(lower)) features.push('ground');
 
       return { recommendedSize, detectedItems, totalSqFt, maxPrice, maxDist, location, features };
     }
