@@ -2,7 +2,12 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="Endless Storage">
+  <meta name="theme-color" content="#0a3b2e">
+  <meta name="format-detection" content="telephone=no">
   <title>Find Self-Storage Near You | Endless Storage Marketplace</title>
   <meta name="description" content="Compare self-storage prices, read reviews, and reserve units near you. Find the best deals on storage units from top-rated facilities.">
   <meta name="robots" content="index, follow">
@@ -63,18 +68,29 @@
       --radius-lg: 12px;
     }
 
+    * { -webkit-tap-highlight-color: rgba(0,0,0,0); }
+    html { -webkit-text-size-adjust: 100%; text-size-adjust: 100%; }
     body {
       font-family: 'Inter', system-ui, -apple-system, sans-serif;
       color: var(--gray-900);
       background: var(--white);
       line-height: 1.5;
       -webkit-font-smoothing: antialiased;
+      overflow-x: hidden;
+      overscroll-behavior-y: contain;
     }
+    /* iOS smooth scrolling for any scrollable region */
+    .listings, .ai-insights-bar, .toolbar-left, .ai-rec-actions, .compare-grid, .filter-dropdown { -webkit-overflow-scrolling: touch; }
+    /* Prevent iOS auto-zoom on focus by ensuring all form fields are >= 16px */
+    input, textarea, select { font-size: 16px; }
 
     /* ── Site Nav ── */
     .site-nav {
       background: var(--white);
       padding: 16px 40px;
+      padding-top: max(16px, env(safe-area-inset-top));
+      padding-left: max(40px, env(safe-area-inset-left));
+      padding-right: max(40px, env(safe-area-inset-right));
       display: flex;
       align-items: center;
       justify-content: space-between;
@@ -960,85 +976,113 @@
 
     /* ── Responsive ── */
     @media (max-width: 768px) {
-      .site-nav { padding: 12px 16px; }
+      .site-nav { padding: 12px 16px; padding-top: max(12px, env(safe-area-inset-top)); padding-left: max(16px, env(safe-area-inset-left)); padding-right: max(16px, env(safe-area-inset-right)); }
       .site-nav-logo img { height: 40px; }
       .site-nav-links { gap: 12px; }
-      .site-nav-link { font-size: 0.8rem; }
-      .site-nav-cta { padding: 8px 14px; font-size: 0.78rem; }
+      .site-nav-link { font-size: 0.85rem; padding: 8px 4px; }
+      .site-nav-cta { padding: 10px 16px; font-size: 0.82rem; min-height: 40px; }
 
       .hero { padding: 28px 16px 36px; }
-      .hero h1 { font-size: 1.45rem; margin-bottom: 6px; }
-      .hero p { font-size: 0.9rem; margin-bottom: 20px; }
-      .hero-stats { gap: 12px; font-size: 0.7rem; flex-wrap: wrap; justify-content: center; }
+      .hero h1 { font-size: 1.55rem; margin-bottom: 6px; line-height: 1.15; }
+      .hero p { font-size: 0.95rem; margin-bottom: 16px; line-height: 1.4; }
+      .hero-movers-tag { font-size: 1.05rem; }
+      .hero-stats { gap: 14px; font-size: 0.78rem; flex-wrap: wrap; justify-content: center; }
       .hero-card-carousel { width: 260px; height: 220px; margin-top: 20px; }
       .hero-carousel-card { width: 230px; height: 200px; }
       .hero-carousel-card .hc-image { height: 72px; }
       .hero-carousel-card .hc-body { padding: 8px 12px; }
-      .hero-carousel-label { font-size: 0.7rem; }
+      .hero-carousel-label { font-size: 0.78rem; }
 
-      .search-mode-btn { padding: 5px 12px; font-size: 0.75rem; }
-      .ai-search-box { border-radius: 12px; }
-      .ai-search-box textarea { padding: 12px 14px 6px; font-size: 0.88rem; min-height: 50px; }
-      .ai-search-footer { padding: 6px 12px 10px; }
-      .ai-search-go { padding: 7px 18px; font-size: 0.82rem; }
+      /* Search mode toggle - larger tap area */
+      .search-mode-toggle { gap: 6px; }
+      .search-mode-btn { padding: 10px 18px; font-size: 0.85rem; min-height: 40px; }
+      .ai-search-box { border-radius: 14px; }
+      .ai-search-box textarea { padding: 14px 16px 8px; min-height: 60px; }
+      .ai-search-footer { padding: 8px 12px 12px; }
+      .ai-search-go { padding: 12px 22px; font-size: 0.92rem; min-height: 44px; }
+      .ai-mic-btn { width: 44px; height: 44px; min-height: 44px; }
       .search-box { border-radius: 40px; }
-      .search-box input { padding: 12px 16px; font-size: 0.9rem; }
-      .search-box button { padding: 12px 18px; font-size: 0.88rem; }
+      .search-box input { padding: 14px 18px; }
+      .search-box button { padding: 14px 22px; font-size: 0.95rem; min-height: 48px; }
 
       .sticky-bar-wrap { top: 65px; }
-      .toolbar { padding: 8px 12px; gap: 8px; }
-      .results-count { font-size: 0.78rem; }
-      .filter-btn { padding: 6px 10px; font-size: 0.75rem; }
-      .view-toggle button { padding: 5px 10px; font-size: 0.72rem; }
-      .sort-select { padding: 6px 28px 6px 10px; font-size: 0.78rem; }
+      .toolbar { padding: 10px 12px; gap: 8px; flex-wrap: wrap; }
+      .toolbar-left { gap: 8px; flex-wrap: nowrap; overflow-x: auto; padding-bottom: 2px; width: 100%; order: 1; -webkit-overflow-scrolling: touch; }
+      .toolbar-right { width: 100%; justify-content: flex-start; order: 2; gap: 8px; }
+      .toolbar-left::-webkit-scrollbar { display: none; }
+      .results-count { font-size: 0.85rem; white-space: nowrap; flex-shrink: 0; }
+      .filter-btn { padding: 9px 14px; font-size: 0.85rem; min-height: 38px; white-space: nowrap; flex-shrink: 0; }
+      .view-toggle button { padding: 9px 14px; font-size: 0.8rem; min-height: 36px; }
+      .sort-select { padding: 9px 30px 9px 12px; font-size: 0.85rem; min-height: 38px; }
 
-      .ai-insights-bar .ai-insight-label { font-size: 0.65rem; padding-left: 12px; padding-right: 8px; }
-      .ai-insight-chip { font-size: 0.72rem; padding: 4px 10px; }
+      .ai-insights-bar { padding: 6px 0; }
+      .ai-insights-bar .ai-insight-label { font-size: 0.7rem; padding-left: 14px; padding-right: 12px; background: #f0faf6; box-shadow: 6px 0 8px #f0faf6; }
+      .ai-insight-chip { font-size: 0.78rem; padding: 6px 12px; min-height: 30px; }
 
       .main { grid-template-columns: 1fr; height: auto; }
-      .listings { max-height: none; padding: 12px; gap: 10px; }
-      .map-panel { height: 300px; order: -1; }
+      .listings { max-height: none; padding: 12px; padding-bottom: max(20px, env(safe-area-inset-bottom)); gap: 10px; }
+      .map-panel { height: 320px; order: -1; }
 
-      .facility-card .card-content { padding: 12px 14px 16px; }
-      .card-header h3 { font-size: 0.95rem; }
-      .card-units { grid-template-columns: repeat(3, 1fr); gap: 4px; }
-      .unit-pill { padding: 5px 3px; min-height: 46px; }
-      .unit-pill .size { font-size: 0.68rem; }
-      .unit-pill .price { font-size: 0.82rem; }
+      .facility-card { border-radius: 14px; }
+      .facility-card .card-content { padding: 14px 16px 18px; }
+      .card-header h3 { font-size: 1rem; line-height: 1.25; }
+      .card-distance { font-size: 0.8rem; }
+      .fav-btn { width: 36px; height: 36px; font-size: 1.3rem; }
+      .card-address { font-size: 0.85rem; }
+      .card-units { grid-template-columns: repeat(3, 1fr); gap: 6px; }
+      .unit-pill { padding: 8px 4px; min-height: 56px; }
+      .unit-pill .size { font-size: 0.72rem; }
+      .unit-pill .price { font-size: 0.88rem; }
+      .unit-pill .fits { display: none; }
+      .unit-pill .reserve-hint { font-size: 0.62rem; }
       .card-actions { flex-direction: column; gap: 8px; }
       .card-actions .btn-primary,
       .card-actions .btn-secondary,
-      .card-actions .btn-compare { width: 100%; justify-content: center; text-align: center; }
+      .card-actions .btn-compare { width: 100%; justify-content: center; text-align: center; padding: 12px 16px; min-height: 44px; font-size: 0.95rem; }
 
       .ai-rec-card { padding: 14px 16px; gap: 12px; }
       .ai-rec-icon { width: 30px; height: 30px; min-width: 30px; font-size: 14px; }
-      .ai-rec-text { font-size: 0.82rem; }
+      .ai-rec-text { font-size: 0.88rem; }
 
-      .swipe-stack { height: 400px; }
-      .swipe-card { border-radius: 16px; }
+      .swipe-stack { height: 460px; }
+      .swipe-card { border-radius: 18px; }
+      .swipe-actions button { width: 56px; height: 56px; }
 
-      .site-footer { padding: 32px 16px 0; }
+      .site-footer { padding: 32px 16px max(20px, env(safe-area-inset-bottom)); }
       .site-footer-grid { grid-template-columns: 1fr; gap: 24px; }
       .site-footer-bottom { flex-direction: column; gap: 12px; text-align: center; padding: 16px 0; }
       .site-footer-bottom-left { flex-direction: column; gap: 8px; }
       .site-footer-bottom-right { flex-direction: column; gap: 8px; }
 
-      .price-lock-modal-content { width: 95%; padding: 20px; }
+      .price-lock-modal-content { width: 95%; padding: 20px; border-radius: 16px; }
     }
 
     @media (max-width: 480px) {
       .site-nav-links .site-nav-link { display: none; }
       .site-nav-links .site-nav-link.active { display: inline; }
 
-      .hero h1 { font-size: 1.25rem; }
-      .hero p { font-size: 0.82rem; }
-      .hero-stats { font-size: 0.65rem; gap: 8px; }
+      .hero { padding: 22px 14px 28px; }
+      .hero h1 { font-size: 1.35rem; }
+      .hero p { font-size: 0.88rem; }
+      .hero-movers-tag { font-size: 0.98rem; margin: -2px 0 10px; }
+      .hero-stats { font-size: 0.72rem; gap: 10px; }
       .hero-card-carousel { width: 220px; height: 190px; }
       .hero-carousel-card { width: 200px; height: 170px; }
       .hero-carousel-card .hc-image { height: 60px; }
 
-      .card-units { grid-template-columns: repeat(2, 1fr); }
-      .map-panel { height: 240px; }
+      /* Wrap toolbar on very narrow screens */
+      .toolbar-right { gap: 6px; }
+
+      .card-units { grid-template-columns: repeat(2, 1fr); gap: 6px; }
+      .map-panel { height: 260px; }
+
+      /* Slightly larger AI insights chips on small screens */
+      .ai-insight-chip { font-size: 0.75rem; padding: 6px 10px; }
+    }
+
+    /* iPhone X-class notch landscape orientation */
+    @media (max-width: 932px) and (orientation: landscape) {
+      .map-panel { height: calc(100vh - 200px); min-height: 240px; }
     }
   </style>
 </head>
