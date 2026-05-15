@@ -596,6 +596,7 @@
     .badge-promo { background: #fef3c7; color: #92400e; }
     .badge-popular { background: var(--blue-100); color: #1e40af; }
     .badge-flex { background: var(--gray-100); color: var(--gray-700); }
+    .sponsored-label { font-size: 0.7rem; color: var(--gray-500); margin: 2px 0 6px; letter-spacing: 0.02em; }
 
     .card-units { display: grid; grid-template-columns: repeat(3, 1fr); gap: 5px; margin-bottom: 10px; }
     .unit-pill {
@@ -1256,14 +1257,14 @@
 
     // ── Sample data ──
     const SAMPLE_DATA = [
-      { id:1, name:"CubeSmart Self Storage", address:"2609 SW 28th Ln", city:"Miami", state:"FL", zip:"33133", lat:25.738, lng:-80.237, phone:"(305) 444-8880", website:"https://www.cubesmart.com", rating:4.7, reviews:284, features:["climate","24hr","surveillance","ground"], units:[{size:"5x5",price:49},{size:"5x10",price:89},{size:"10x10",price:149},{size:"10x15",price:199},{size:"10x20",price:259}], estimatedPricing:true, photos:["https://images.unsplash.com/photo-1681487834818-369c5e07675a?w=600&h=400&fit=crop","https://images.unsplash.com/photo-1694601618351-dbbbb2b8934f?w=600&h=400&fit=crop","https://images.unsplash.com/photo-1609143739217-01b60dad1c67?w=600&h=400&fit=crop"] },
-      { id:2, name:"Public Storage - Coral Gables", address:"3895 SW 8th St", city:"Coral Gables", state:"FL", zip:"33134", lat:25.763, lng:-80.264, phone:"(305) 446-9096", website:"https://www.publicstorage.com", rating:4.3, reviews:167, features:["climate","surveillance","drive_up"], units:[{size:"5x5",price:55},{size:"5x10",price:95},{size:"10x10",price:165},{size:"10x20",price:285}], estimatedPricing:true, photos:["https://images.unsplash.com/photo-1618438502398-195e47778d6c?w=600&h=400&fit=crop","https://images.unsplash.com/photo-1638847868668-a05a2f69622f?w=600&h=400&fit=crop"] },
-      { id:3, name:"Life Storage - Coconut Grove", address:"3726 SW 28th St", city:"Miami", state:"FL", zip:"33133", lat:25.735, lng:-80.245, phone:"(305) 443-7917", website:"https://www.lifestorage.com", rating:4.8, reviews:312, features:["climate","24hr","surveillance","ground","drive_up"], units:[{size:"5x5",price:42},{size:"5x10",price:79},{size:"10x10",price:139},{size:"10x15",price:189},{size:"10x20",price:245},{size:"10x30",price:349}], estimatedPricing:true, photos:["https://images.unsplash.com/photo-1649260791830-5404cc5af05b?w=600&h=400&fit=crop","https://images.unsplash.com/photo-1662320154145-7263e998e7a2?w=600&h=400&fit=crop","https://images.unsplash.com/photo-1600718800089-353dc75b7bfd?w=600&h=400&fit=crop","https://images.unsplash.com/photo-1600181914037-b14638c1137d?w=600&h=400&fit=crop"] },
-      { id:4, name:"Extra Space Storage", address:"1001 NW 36th St", city:"Miami", state:"FL", zip:"33127", lat:25.802, lng:-80.211, phone:"(305) 573-4850", website:"https://www.extraspace.com", rating:4.5, reviews:198, features:["climate","surveillance","24hr"], units:[{size:"5x5",price:59},{size:"5x10",price:99},{size:"10x10",price:159},{size:"10x15",price:209}], estimatedPricing:true, photos:["https://images.unsplash.com/photo-1685119166946-d4050647b0e3?w=600&h=400&fit=crop","https://images.unsplash.com/photo-1661443794148-6f4358ea4fa7?w=600&h=400&fit=crop","https://images.unsplash.com/photo-1649313522492-ffb2ab3c7dac?w=600&h=400&fit=crop"] },
-      { id:5, name:"StorQuest Self Storage", address:"220 NW 24th St", city:"Miami", state:"FL", zip:"33127", lat:25.795, lng:-80.200, phone:"(305) 571-8888", website:"https://www.storquest.com", rating:4.6, reviews:143, features:["climate","24hr","surveillance","ground"], units:[{size:"5x5",price:45},{size:"5x10",price:85},{size:"10x10",price:145},{size:"10x20",price:249}], estimatedPricing:true, photos:["https://images.unsplash.com/photo-1742418028301-3f98067ee739?w=600&h=400&fit=crop","https://images.unsplash.com/photo-1649313444539-a8900c5cdc54?w=600&h=400&fit=crop"] },
-      { id:6, name:"Brickell Storage", address:"60 SW 13th St", city:"Miami", state:"FL", zip:"33130", lat:25.761, lng:-80.198, phone:"(305) 856-1500", website:"https://www.brickellstorage.com", rating:4.2, reviews:89, features:["climate","surveillance"], units:[{size:"5x5",price:69},{size:"5x10",price:119},{size:"10x10",price:189},{size:"10x15",price:249}], estimatedPricing:true, photos:["https://images.unsplash.com/photo-1682146262947-614e8920a36d?w=600&h=400&fit=crop"] },
-      { id:7, name:"Midgard Self Storage", address:"945 NW 1st Ct", city:"Miami", state:"FL", zip:"33136", lat:25.783, lng:-80.196, phone:"(305) 374-7227", website:"https://www.midgardstorage.com", rating:4.9, reviews:415, features:["climate","24hr","surveillance","ground","drive_up"], units:[{size:"5x5",price:39},{size:"5x10",price:75},{size:"10x10",price:135},{size:"10x15",price:179},{size:"10x20",price:239},{size:"10x30",price:329}], estimatedPricing:true, photos:["https://images.unsplash.com/photo-1595050309250-3047a857b88d?w=600&h=400&fit=crop","https://images.unsplash.com/photo-1551313158-73d016a829ae?w=600&h=400&fit=crop","https://images.unsplash.com/photo-1661443803051-dc31b77fa17e?w=600&h=400&fit=crop","https://images.unsplash.com/photo-1517490232338-06b912a786b5?w=600&h=400&fit=crop","https://images.unsplash.com/photo-1649899588991-5200ba8f7f4f?w=600&h=400&fit=crop"] },
-      { id:8, name:"U-Haul Storage of Little Havana", address:"390 NW 22nd Ave", city:"Miami", state:"FL", zip:"33125", lat:25.776, lng:-80.235, phone:"(305) 642-0600", website:"https://www.uhaul.com", rating:4.0, reviews:72, features:["drive_up","surveillance"], units:[{size:"5x10",price:65},{size:"10x10",price:110},{size:"10x15",price:155},{size:"10x20",price:195}], estimatedPricing:true, photos:["https://images.unsplash.com/photo-1649260791830-5404cc5af05b?w=600&h=400&fit=crop","https://images.unsplash.com/photo-1618438502398-195e47778d6c?w=600&h=400&fit=crop"] }
+      { id:1, name:"CubeSmart Self Storage", sponsored:true, address:"2609 SW 28th Ln", city:"Miami", state:"FL", zip:"33133", lat:25.738, lng:-80.237, distance:2.5, isOpen:true, phone:"(305) 444-8880", website:"https://www.cubesmart.com", rating:4.7, reviews:284, features:["climate","24hr","surveillance","ground"], units:[{size:"5x5",price:49},{size:"5x10",price:89},{size:"10x10",price:149},{size:"10x15",price:199},{size:"10x20",price:259}], estimatedPricing:true, photos:["https://images.unsplash.com/photo-1681487834818-369c5e07675a?w=600&h=400&fit=crop","https://images.unsplash.com/photo-1694601618351-dbbbb2b8934f?w=600&h=400&fit=crop","https://images.unsplash.com/photo-1609143739217-01b60dad1c67?w=600&h=400&fit=crop"] },
+      { id:2, name:"Public Storage - Coral Gables", address:"3895 SW 8th St", city:"Coral Gables", state:"FL", zip:"33134", lat:25.763, lng:-80.264, distance:3.0, isOpen:true, phone:"(305) 446-9096", website:"https://www.publicstorage.com", rating:4.3, reviews:167, features:["climate","surveillance","drive_up"], units:[{size:"5x5",price:55},{size:"5x10",price:95},{size:"10x10",price:165},{size:"10x20",price:285}], estimatedPricing:true, photos:["https://images.unsplash.com/photo-1618438502398-195e47778d6c?w=600&h=400&fit=crop","https://images.unsplash.com/photo-1638847868668-a05a2f69622f?w=600&h=400&fit=crop"] },
+      { id:3, name:"Life Storage - Coconut Grove", address:"3726 SW 28th St", city:"Miami", state:"FL", zip:"33133", lat:25.735, lng:-80.245, distance:2.8, isOpen:true, phone:"(305) 443-7917", website:"https://www.lifestorage.com", rating:4.8, reviews:312, features:["climate","24hr","surveillance","ground","drive_up"], units:[{size:"5x5",price:42},{size:"5x10",price:79},{size:"10x10",price:139},{size:"10x15",price:189},{size:"10x20",price:245},{size:"10x30",price:349}], estimatedPricing:true, photos:["https://images.unsplash.com/photo-1649260791830-5404cc5af05b?w=600&h=400&fit=crop","https://images.unsplash.com/photo-1662320154145-7263e998e7a2?w=600&h=400&fit=crop","https://images.unsplash.com/photo-1600718800089-353dc75b7bfd?w=600&h=400&fit=crop","https://images.unsplash.com/photo-1600181914037-b14638c1137d?w=600&h=400&fit=crop"] },
+      { id:4, name:"Extra Space Storage", address:"1001 NW 36th St", city:"Miami", state:"FL", zip:"33127", lat:25.802, lng:-80.211, distance:2.3, isOpen:true, phone:"(305) 573-4850", website:"https://www.extraspace.com", rating:4.5, reviews:198, features:["climate","surveillance","24hr"], units:[{size:"5x5",price:59},{size:"5x10",price:99},{size:"10x10",price:159},{size:"10x15",price:209}], estimatedPricing:true, photos:["https://images.unsplash.com/photo-1685119166946-d4050647b0e3?w=600&h=400&fit=crop","https://images.unsplash.com/photo-1661443794148-6f4358ea4fa7?w=600&h=400&fit=crop","https://images.unsplash.com/photo-1649313522492-ffb2ab3c7dac?w=600&h=400&fit=crop"] },
+      { id:5, name:"StorQuest Self Storage", address:"220 NW 24th St", city:"Miami", state:"FL", zip:"33127", lat:25.795, lng:-80.200, distance:2.1, isOpen:true, phone:"(305) 571-8888", website:"https://www.storquest.com", rating:4.6, reviews:143, features:["climate","24hr","surveillance","ground"], units:[{size:"5x5",price:45},{size:"5x10",price:85},{size:"10x10",price:145},{size:"10x20",price:249}], estimatedPricing:true, photos:["https://images.unsplash.com/photo-1742418028301-3f98067ee739?w=600&h=400&fit=crop","https://images.unsplash.com/photo-1649313444539-a8900c5cdc54?w=600&h=400&fit=crop"] },
+      { id:6, name:"Brickell Storage", address:"60 SW 13th St", city:"Miami", state:"FL", zip:"33130", lat:25.761, lng:-80.198, distance:1.6, isOpen:true, phone:"(305) 856-1500", website:"https://www.brickellstorage.com", rating:4.2, reviews:89, features:["climate","surveillance"], units:[{size:"5x5",price:69},{size:"5x10",price:119},{size:"10x10",price:189},{size:"10x15",price:249}], estimatedPricing:true, photos:["https://images.unsplash.com/photo-1682146262947-614e8920a36d?w=600&h=400&fit=crop"] },
+      { id:7, name:"Midgard Self Storage", address:"945 NW 1st Ct", city:"Miami", state:"FL", zip:"33136", lat:25.783, lng:-80.196, distance:1.7, isOpen:true, phone:"(305) 374-7227", website:"https://www.midgardstorage.com", rating:4.9, reviews:415, features:["climate","24hr","surveillance","ground","drive_up"], units:[{size:"5x5",price:39},{size:"5x10",price:75},{size:"10x10",price:135},{size:"10x15",price:179},{size:"10x20",price:239},{size:"10x30",price:329}], estimatedPricing:true, photos:["https://images.unsplash.com/photo-1595050309250-3047a857b88d?w=600&h=400&fit=crop","https://images.unsplash.com/photo-1551313158-73d016a829ae?w=600&h=400&fit=crop","https://images.unsplash.com/photo-1661443803051-dc31b77fa17e?w=600&h=400&fit=crop","https://images.unsplash.com/photo-1517490232338-06b912a786b5?w=600&h=400&fit=crop","https://images.unsplash.com/photo-1649899588991-5200ba8f7f4f?w=600&h=400&fit=crop"] },
+      { id:8, name:"U-Haul Storage of Little Havana", address:"390 NW 22nd Ave", city:"Miami", state:"FL", zip:"33125", lat:25.776, lng:-80.235, distance:1.0, isOpen:true, phone:"(305) 642-0600", website:"https://www.uhaul.com", rating:4.0, reviews:72, features:["drive_up","surveillance"], units:[{size:"5x10",price:65},{size:"10x10",price:110},{size:"10x15",price:155},{size:"10x20",price:195}], estimatedPricing:true, photos:["https://images.unsplash.com/photo-1649260791830-5404cc5af05b?w=600&h=400&fit=crop","https://images.unsplash.com/photo-1618438502398-195e47778d6c?w=600&h=400&fit=crop"] }
     ];
 
     const FEATURE_LABELS = { climate:"Climate Controlled", drive_up:"Drive-Up", "24hr":"24hr Access", surveillance:"Surveillance", ground:"Ground Floor" };
@@ -1663,12 +1664,14 @@
 
     function applySort() {
       const s = document.getElementById('sortSelect').value;
-      filteredFacilities.sort((a,b) =>
-        s==='distance' ? a.distance-b.distance :
-        s==='price_low' ? Math.min(...a.units.map(u=>u.price))-Math.min(...b.units.map(u=>u.price)) :
-        s==='price_high'? Math.min(...b.units.map(u=>u.price))-Math.min(...a.units.map(u=>u.price)) :
-        b.rating-a.rating
-      );
+      filteredFacilities.sort((a,b) => {
+        const sp = (b.sponsored ? 1 : 0) - (a.sponsored ? 1 : 0);
+        if (sp !== 0) return sp;
+        return s==='distance' ? a.distance-b.distance :
+          s==='price_low' ? Math.min(...a.units.map(u=>u.price))-Math.min(...b.units.map(u=>u.price)) :
+          s==='price_high'? Math.min(...b.units.map(u=>u.price))-Math.min(...a.units.map(u=>u.price)) :
+          b.rating-a.rating;
+      });
       if (currentView === 'list') renderResults();
       else { initSwipe(); }
     }
@@ -1789,6 +1792,7 @@
               </button>
             </div>
           </div>
+          ${f.sponsored ? '<div class="sponsored-label">Sponsored Property</div>' : ''}
           <div class="card-address">${esc(f.address)}, ${esc(f.city)}, ${esc(f.state)} ${esc(f.zip)}</div>
           <div class="card-meta">
             <div class="card-rating">
@@ -2386,6 +2390,13 @@
     // ── Init ──
     initMap();
     geolocateUser();
+
+    // ── Preload demo facilities so the list + map are populated before any search ──
+    allFacilities = SAMPLE_DATA.slice();
+    filteredFacilities = SAMPLE_DATA.slice();
+    document.getElementById('toolbar').style.display = 'flex';
+    applySort();
+    renderAIInsights(null);
   </script>
 </body>
 </html>
