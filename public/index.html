@@ -1491,16 +1491,37 @@
       }
     }
 
+    // Strip storage/dwelling/qualifier words so the raw query can be sent to the geocoder.
+    function stripNonLocationWords(text) {
+      return text
+        .replace(/\$\d+(?:[.,]\d+)?\s*(?:\/?\s*(?:mo|month|monthly|per month|a month))?/gi, '')
+        .replace(/\b(?:within|under|over|below|less|more|max|maximum|no more|up to)\s+\$?\d+\s*(?:mi|mile|miles|blocks?|dollars?|months?)?\b/gi, '')
+        .replace(/\b\d+\s*(?:mi|mile|miles|blocks?)\b/gi, '')
+        .replace(/\b\d+\s*(?:x|×)\s*\d+\b/gi, '')
+        .replace(/\b\d+\s*(?:br|bed|bedroom|bedrooms)\b/gi, '')
+        .replace(/\b(?:studio|efficiency|apartment|apt|condo|house|home|room|building)\b/gi, '')
+        .replace(/\b(?:store|storage|storing|stored|stuff|things|items?|moving|move|movers?)\b/gi, '')
+        .replace(/\b(?:climate|controlled|temperature|air[- ]?condition(?:ed|ing)?|drive[- ]?up|24[- ]?hours?|24\/7|all[- ]?day|anytime|surveillance|security|cctv|gated|secure|ground[- ]?(?:floor|level)|first[- ]?floor)\b/gi, '')
+        .replace(/\b(?:i|me|my|we|us|the|a|an|need|needs|want|wants|find|looking|just|some|few|many|please|help|hi|hello|hey|with|that|having|having|for)\b/gi, '')
+        .replace(/[!?.,;:"'()]/g, ' ')
+        .replace(/\s+/g, ' ')
+        .trim();
+    }
+
     async function handleAISearch() {
       const text = document.getElementById('aiSearchInput').value.trim();
       if (!text) return;
 
       const parsed = parseAIQuery(text);
 
+      // Try the structured-parser location first; if missing, fall back to a
+      // cleaned version of the whole query so Google's geocoder can interpret
+      // arbitrary natural-language input (case-insensitive, any phrasing).
       const fallbackLocation = document.getElementById('searchInput').value.trim();
-      const searchLocation = parsed.location || fallbackLocation;
+      const cleaned = stripNonLocationWords(text);
+      const searchLocation = parsed.location || fallbackLocation || cleaned;
       if (!searchLocation) {
-        showSearchError(`I couldn't find a location in your request. Try adding a city name or ZIP code (e.g. "...near Denver, CO" or "...in 60601").`);
+        showSearchError(`I couldn't figure out where to search. Try adding a city, address, or ZIP code.`);
         return;
       }
 
@@ -1510,7 +1531,7 @@
 
       const data = await fetchFacilities(searchLocation);
       if (!data.facilities || !data.facilities.length || !data.location) {
-        showSearchError(`No storage facilities found near "${searchLocation}". Please try a different location.`);
+        showSearchError(`No storage facilities found for "${searchLocation}". Please try a different location.`);
         return;
       }
       allFacilities = data.facilities;
