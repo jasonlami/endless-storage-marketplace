@@ -1441,10 +1441,26 @@
         const zipMatch = text.match(/\b(\d{5})\b/);
         if (zipMatch) location = zipMatch[1];
       }
-      // 3. "City, ST" pattern fallback anywhere in the text
+      // 3. "city ST" pattern fallback (case-insensitive). Walks backward from the state
+      //    code, collecting up to 3 contiguous non-stop-words as the city.
       if (!location) {
-        const cityStateMatch = text.match(/\b([A-Z][a-zA-Z]+(?:\s+[A-Z][a-zA-Z]+)*),?\s+([A-Z]{2})\b/);
-        if (cityStateMatch) location = cityStateMatch[1] + ', ' + cityStateMatch[2];
+        const STATES = 'AL|AK|AZ|AR|CA|CO|CT|DE|FL|GA|HI|ID|IL|IN|IA|KS|KY|LA|ME|MD|MA|MI|MN|MS|MO|MT|NE|NV|NH|NJ|NM|NY|NC|ND|OH|OK|OR|PA|RI|SC|SD|TN|TX|UT|VT|VA|WA|WV|WI|WY|DC';
+        const STOP = new Set(['my','your','the','a','an','in','at','of','from','near','around','with','for','and','or','to','on','by','as','is','am','are','be','have','has','had','do','does','did','will','would','should','can','could','may','might','i','we','me','us','it','that','this','these','those','studio','efficiency','apartment','apt','condo','house','home','room','building','bedroom','bedrooms','br','bed','beds','storage','store','storing','stored','stuff','things','items','item','box','boxes','tote','totes','bin','bag','crate','furniture','moving','move','need','needs','want','wants','find','looking','rent','rents','renting','just','some','few','many','all','any','about','really','also','only','months','month','mo','mile','miles','blocks','block','under','over','less','more','than','within','between','budget','price','priced','cost','costs','climate','controlled','drive','up','24','hour','hours','access','secure','security','camera','surveillance','gated','ground','floor','floors','first']);
+        const stateRe = new RegExp(`\\b(${STATES})\\b`, 'gi');
+        const stateMatches = [...text.matchAll(stateRe)];
+        if (stateMatches.length) {
+          const last = stateMatches[stateMatches.length - 1];
+          const before = text.slice(0, last.index);
+          const words = before.match(/[a-zA-Z][a-zA-Z'-]+/g) || [];
+          const cityWords = [];
+          for (let i = words.length - 1; i >= 0 && cityWords.length < 4; i--) {
+            if (STOP.has(words[i].toLowerCase())) break;
+            cityWords.unshift(words[i]);
+          }
+          if (cityWords.length) {
+            location = cityWords.map(w => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase()).join(' ') + ', ' + last[1].toUpperCase();
+          }
+        }
       }
 
       const features = [];
