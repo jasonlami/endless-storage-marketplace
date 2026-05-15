@@ -712,6 +712,13 @@
     .filter-dropdown label { display: flex; align-items: center; gap: 8px; padding: 6px 0; font-size: 0.875rem; color: var(--gray-700); cursor: pointer; }
     .filter-dropdown input[type="checkbox"] { accent-color: var(--green-900); width: 16px; height: 16px; }
     .filter-group { position: relative; }
+    .filter-backdrop {
+      display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.4);
+      z-index: 999; animation: fadeIn 0.2s ease;
+    }
+    .filter-backdrop.open { display: block; }
+    @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+    @keyframes slideUpSheet { from { transform: translateY(100%); } to { transform: translateY(0); } }
 
     /* ── Compare tray ── */
     .compare-tray {
@@ -1019,6 +1026,26 @@
       .ai-insights-bar .ai-insight-label { font-size: 0.7rem; padding-left: 14px; padding-right: 12px; background: #f0faf6; box-shadow: 6px 0 8px #f0faf6; }
       .ai-insight-chip { font-size: 0.78rem; padding: 6px 12px; min-height: 30px; }
 
+      /* Mobile filter dropdowns appear as iOS-style bottom sheets so they're not
+         clipped by toolbar-left's overflow-x and are easier to tap with a thumb. */
+      .filter-dropdown {
+        position: fixed; top: auto; left: 0; right: 0; bottom: 0;
+        max-height: 70vh; overflow-y: auto; -webkit-overflow-scrolling: touch;
+        border: none; border-radius: 18px 18px 0 0;
+        box-shadow: 0 -10px 30px rgba(0,0,0,0.25);
+        padding: 24px 22px max(28px, env(safe-area-inset-bottom));
+        z-index: 1000; min-width: 0;
+      }
+      .filter-dropdown.open { animation: slideUpSheet 0.22s cubic-bezier(0.2,0.8,0.3,1); }
+      .filter-dropdown::before {
+        content: ''; display: block; width: 44px; height: 5px;
+        background: var(--gray-300); border-radius: 3px;
+        margin: -8px auto 16px;
+      }
+      .filter-dropdown label { padding: 14px 0; font-size: 1rem; gap: 14px; border-bottom: 1px solid var(--gray-100); }
+      .filter-dropdown label:last-of-type { border-bottom: none; }
+      .filter-dropdown input[type="checkbox"] { width: 22px; height: 22px; }
+
       .main { grid-template-columns: 1fr; height: auto; }
       .listings { max-height: none; padding: 12px; padding-bottom: max(20px, env(safe-area-inset-bottom)); gap: 10px; }
       .map-panel { height: 320px; order: -1; }
@@ -1211,6 +1238,9 @@
   <!-- AI Insights Bar -->
   <div class="ai-insights-bar" id="aiInsightsBar"></div>
   </div>
+
+  <!-- Backdrop for mobile filter sheets -->
+  <div class="filter-backdrop" id="filterBackdrop" onclick="closeAllFilters()"></div>
 
   <!-- Main -->
   <div class="main" id="mainContent">
@@ -1786,10 +1816,20 @@
       const dd = document.getElementById(type + 'Filter');
       const isOpen = dd.classList.contains('open');
       document.querySelectorAll('.filter-dropdown').forEach(d => d.classList.remove('open'));
-      if (!isOpen) dd.classList.add('open');
+      const backdrop = document.getElementById('filterBackdrop');
+      if (!isOpen) {
+        dd.classList.add('open');
+        if (window.matchMedia('(max-width: 768px)').matches) backdrop.classList.add('open');
+      } else {
+        backdrop.classList.remove('open');
+      }
+    }
+    function closeAllFilters() {
+      document.querySelectorAll('.filter-dropdown').forEach(d => d.classList.remove('open'));
+      document.getElementById('filterBackdrop').classList.remove('open');
     }
     document.addEventListener('click', e => {
-      if (!e.target.closest('.filter-group')) document.querySelectorAll('.filter-dropdown').forEach(d => d.classList.remove('open'));
+      if (!e.target.closest('.filter-group') && !e.target.closest('.filter-backdrop')) closeAllFilters();
     });
 
     function getCheckedValues(id) { return Array.from(document.querySelectorAll('#'+id+' input:checked')).map(i => i.value); }
@@ -2246,10 +2286,21 @@
 
     // ── Drag handlers ──
     function attachDragHandlers(card) {
-      const onStart = (x) => { isDragging = true; startX = x; card.style.transition = 'none'; };
-      const onMove = (x) => {
-        if (!isDragging) return;
+      let startY = 0, currentY = 0, axis = null;
+      const onStart = (x, y) => { isDragging = true; startX = x; startY = y; currentX = 0; currentY = 0; axis = null; card.style.transition = 'none'; };
+      const onMove = (x, y, ev) => {
+        if (!isDragging) return false;
         currentX = x - startX;
+        currentY = y - startY;
+        // Lock to horizontal axis only after a small threshold, so vertical scrolls in
+        // the card body still work and we don't fight the browser.
+        if (!axis) {
+          if (Math.abs(currentX) > 8 || Math.abs(currentY) > 8) {
+            axis = Math.abs(currentX) > Math.abs(currentY) ? 'x' : 'y';
+          }
+        }
+        if (axis !== 'x') return false;
+        if (ev && ev.cancelable) ev.preventDefault();
         const rotate = currentX * 0.08;
         card.style.transform = `translateX(${currentX}px) rotate(${rotate}deg)`;
 
@@ -2258,27 +2309,31 @@
         const opacity = Math.min(Math.abs(currentX) / 120, 1);
         if (currentX > 0) { saveOverlay.style.opacity = opacity; passOverlay.style.opacity = 0; }
         else { passOverlay.style.opacity = opacity; saveOverlay.style.opacity = 0; }
+        return true;
       };
       const onEnd = () => {
         if (!isDragging) return;
+        const wasHorizontal = axis === 'x';
         isDragging = false;
+        axis = null;
         card.style.transition = '';
-        if (Math.abs(currentX) > 100) {
+        if (wasHorizontal && Math.abs(currentX) > 100) {
           swipeDecision(currentX > 0 ? 'save' : 'pass');
         } else {
           card.style.transform = '';
           card.querySelector('.swipe-overlay-save').style.opacity = 0;
           card.querySelector('.swipe-overlay-pass').style.opacity = 0;
         }
-        currentX = 0;
+        currentX = 0; currentY = 0;
       };
 
-      card.addEventListener('mousedown', e => { e.preventDefault(); onStart(e.clientX); });
-      document.addEventListener('mousemove', e => onMove(e.clientX));
+      card.addEventListener('mousedown', e => { e.preventDefault(); onStart(e.clientX, e.clientY); });
+      document.addEventListener('mousemove', e => onMove(e.clientX, e.clientY));
       document.addEventListener('mouseup', onEnd);
-      card.addEventListener('touchstart', e => onStart(e.touches[0].clientX), {passive:true});
-      card.addEventListener('touchmove', e => onMove(e.touches[0].clientX), {passive:true});
+      card.addEventListener('touchstart', e => onStart(e.touches[0].clientX, e.touches[0].clientY), {passive:true});
+      card.addEventListener('touchmove', e => onMove(e.touches[0].clientX, e.touches[0].clientY, e), {passive:false});
       card.addEventListener('touchend', onEnd);
+      card.addEventListener('touchcancel', onEnd);
     }
 
     function swipeDecision(decision) {
