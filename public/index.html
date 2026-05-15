@@ -478,6 +478,10 @@
 
     /* ── Main layout ── */
     .main { display: grid; grid-template-columns: 1fr 1fr; height: calc(100vh - 60px); position: relative; z-index: 1; }
+    /* Swipe view goes full-width — hide the map and let the deck breathe like a dating app. */
+    .main.swipe-active { grid-template-columns: 1fr; }
+    .main.swipe-active .map-panel { display: none; }
+    .main.swipe-active .listings { overflow: hidden; padding: 0; }
 
     /* ── Listings panel ── */
     .listings { overflow-y: auto; padding: 16px; display: flex; flex-direction: column; gap: 12px; }
@@ -750,7 +754,7 @@
       align-items: center;
       justify-content: flex-start;
       height: 100%;
-      padding: 12px 20px;
+      padding: 20px 20px max(20px, env(safe-area-inset-bottom));
       background: var(--gray-50);
       position: relative;
       overflow: hidden;
@@ -758,7 +762,7 @@
     }
     .swipe-container.active { display: flex; }
 
-    .swipe-progress { text-align: center; margin-bottom: 16px; width: 100%; max-width: 400px; }
+    .swipe-progress { text-align: center; margin-bottom: 16px; width: 100%; max-width: 440px; }
     .swipe-progress-text { font-size: 0.85rem; color: var(--gray-500); margin-bottom: 6px; }
     .swipe-progress-bar { height: 4px; background: var(--gray-200); border-radius: 2px; overflow: hidden; }
     .swipe-progress-fill { height: 100%; background: var(--green-900); border-radius: 2px; transition: width 0.3s; }
@@ -766,10 +770,10 @@
     .swipe-stack {
       position: relative;
       width: 100%;
-      max-width: 400px;
+      max-width: 440px;
       flex: 1;
-      min-height: 0;
-      max-height: 460px;
+      min-height: 400px;
+      max-height: 620px;
     }
 
     .swipe-card {
@@ -1071,9 +1075,11 @@
       .ai-rec-icon { width: 30px; height: 30px; min-width: 30px; font-size: 14px; }
       .ai-rec-text { font-size: 0.88rem; }
 
-      .swipe-stack { height: 460px; }
+      .swipe-stack { min-height: 360px; max-height: calc(100vh - 220px); }
       .swipe-card { border-radius: 18px; }
-      .swipe-actions button { width: 56px; height: 56px; }
+      .swipe-card-image { height: 180px; }
+      .swipe-actions { padding: 10px 0; }
+      .swipe-actions button { width: 60px; height: 60px; }
 
       .site-footer { padding: 32px 16px max(20px, env(safe-area-inset-bottom)); }
       .site-footer-grid { grid-template-columns: 1fr; gap: 24px; }
@@ -1875,6 +1881,8 @@
       document.getElementById('swipeViewBtn').classList.toggle('active', view === 'swipe');
       document.getElementById('sortSelect').style.display = view === 'list' ? '' : 'none';
       document.getElementById('listings').style.overflow = view === 'swipe' ? 'hidden' : 'auto';
+      // Swipe takes the full content area (hides map) for a dating-app feel.
+      document.getElementById('mainContent').classList.toggle('swipe-active', view === 'swipe');
 
       if (view === 'list') {
         renderResults();
