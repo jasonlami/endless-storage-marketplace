@@ -1287,6 +1287,17 @@
       const detectedItems = [];
       const sizeBreakdown = {};
 
+      const explicitSize = lower.match(/\b(\d+)\s*[x×]\s*(\d+)\b/);
+      let explicitRecommended = null;
+      if (explicitSize) {
+        const key = explicitSize[1] + 'x' + explicitSize[2];
+        if (SIZE_INFO[key]) {
+          explicitRecommended = key;
+          totalSqFt = SIZE_INFO[key].sqft;
+          detectedItems.push(key + ' unit');
+        }
+      }
+
       for (const mapping of ITEM_TO_SIZE) {
         for (const item of mapping.items) {
           const regex = new RegExp(`(\\d+)?\\s*${item}(?:e?s)?\\b`, 'gi');
@@ -1315,6 +1326,7 @@
       else if (totalSqFt > 100) recommendedSize = '10x15';
       else if (totalSqFt > 50) recommendedSize = '10x10';
       else if (totalSqFt > 20) recommendedSize = '5x10';
+      if (explicitRecommended) recommendedSize = explicitRecommended;
 
       let maxDist = null;
       const distMatch = lower.match(/(?:within|no more than|under|less than|max)\s*(\d+)\s*(?:mi|mile|miles|blocks?)/);
