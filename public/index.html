@@ -8,9 +8,8 @@
   <meta name="robots" content="index, follow">
   <meta name="author" content="Endless Storage Ventures LLC">
   <link rel="canonical" href="https://www.endless-storage.com/marketplace">
-  <link rel="icon" type="image/svg+xml" href="https://cdn.prod.website-files.com/6532e0d8ebf8cc3e3a1b3380/6532ef572070401a854859b8_image%2012.svg">
-  <link rel="icon" type="image/png" sizes="32x32" href="https://cdn.prod.website-files.com/6532e0d8ebf8cc3e3a1b3380/6538ad1c1b47c2ed4cd57952_favicon-32x32.png">
-  <link rel="apple-touch-icon" href="https://cdn.prod.website-files.com/6532e0d8ebf8cc3e3a1b3380/6538ad1c1b47c2ed4cd57952_favicon-32x32.png">
+  <link rel="icon" type="image/svg+xml" href="/favicon.svg">
+  <link rel="apple-touch-icon" href="/favicon.svg">
 
   <!-- Open Graph -->
   <meta property="og:type" content="website">
@@ -175,6 +174,12 @@
     }
     .hero-content { position: relative; max-width: 680px; margin: 0 auto; }
     .hero h1 { color: var(--white); font-size: 2.25rem; font-weight: 700; margin-bottom: 8px; letter-spacing: -0.02em; font-family: 'Clash Display', 'Inter', sans-serif; }
+    .hero-movers-tag { color: var(--white); font-size: 1.15rem; font-weight: 700; margin: -4px 0 14px; letter-spacing: -0.01em; }
+    .hero-movers-pill { display: inline-block; background: rgba(255,255,255,0.18); padding: 3px 10px; border-radius: 20px; font-size: 0.78rem; font-weight: 600; vertical-align: 2px; margin-left: 4px; letter-spacing: 0; }
+    .hero.searched { padding: 16px 24px 8px; min-height: 0; }
+    .hero.searched h1, .hero.searched .hero-movers-tag, .hero.searched .hero-stats, .hero.searched .hero-card-carousel, .hero.searched .hero-carousel-label, .hero.searched .hero-content > p { display: none !important; }
+    .hero.searched .search-mode-toggle { margin-top: 0; margin-bottom: 8px; }
+    .hero.searched .ai-search-box, .hero.searched .search-box { transform: scale(0.92); transform-origin: top center; margin-bottom: 0; }
     .hero p { color: rgba(255,255,255,0.8); font-size: 1.1rem; margin-bottom: 28px; }
 
     .search-box {
@@ -1057,8 +1062,8 @@
   <section class="hero">
     <div class="hero-content">
       <h1>The Smarter Way to Find Storage</h1>
+      <p class="hero-movers-tag">and Movers <span class="hero-movers-pill">(coming soon)</span></p>
       <p style="margin-bottom:2px;">Tell us what you're storing and we'll find the perfect unit. Or swipe through options like a dating app.</p>
-      <p style="font-size:0.95rem;opacity:0.75;margin-top:0;">and Movers <span style="background:rgba(255,255,255,0.15);padding:2px 8px;border-radius:20px;font-size:0.8rem;">(coming soon)</span></p>
       <div class="search-mode-toggle">
         <button class="search-mode-btn active" onclick="setSearchMode('ai')">&#10024; AI Search</button>
         <button class="search-mode-btn" onclick="setSearchMode('quick')">Quick Search</button>
@@ -1380,8 +1385,23 @@
       }
 
       let location = null;
-      const locMatch = lower.match(/(?:near|from|in|around|close to)\s+([a-zA-Z\s]+?)(?:\s+and\s|\s+under\s|\s+no\s|\s+less\s|\s+max\s|\s+for\s|$)/);
-      if (locMatch) location = locMatch[1].trim().replace(/\b\w/g, l => l.toUpperCase());
+      // 1. Explicit location keyword: "near/in/from/around/close to/at/of <city>"
+      //    Terminator list widened: "with/that/having/budget/$/digits" and punctuation.
+      const locMatch = lower.match(/(?:near|from|in|around|close to|at|of)\s+([a-z][a-z\s.,'-]+?)(?:\s+(?:and|under|no|less|max|for|with|that|who|having|budget|in|on|at)\b|[?!.]|\$|\d|$)/);
+      if (locMatch) {
+        let raw = locMatch[1].trim().replace(/[,.\s]+$/, '');
+        if (raw.length >= 3) location = raw.replace(/\b\w/g, l => l.toUpperCase());
+      }
+      // 2. ZIP code fallback (5-digit US zip)
+      if (!location) {
+        const zipMatch = text.match(/\b(\d{5})\b/);
+        if (zipMatch) location = zipMatch[1];
+      }
+      // 3. "City, ST" pattern fallback anywhere in the text
+      if (!location) {
+        const cityStateMatch = text.match(/\b([A-Z][a-zA-Z]+(?:\s+[A-Z][a-zA-Z]+)*),?\s+([A-Z]{2})\b/);
+        if (cityStateMatch) location = cityStateMatch[1] + ', ' + cityStateMatch[2];
+      }
 
       const features = [];
       if (/\bclimate[- ]?(controlled?|control)\b|\btemperature[- ]?(controlled?|control)\b|\bair[- ]?condition(ed|ing)?\b|\bclimatized\b/i.test(lower)) features.push('climate');
@@ -1416,11 +1436,23 @@
       if (!text) return;
 
       const parsed = parseAIQuery(text);
+
+      const fallbackLocation = document.getElementById('searchInput').value.trim();
+      const searchLocation = parsed.location || fallbackLocation;
+      if (!searchLocation) {
+        showSearchError(`I couldn't find a location in your request. Try adding a city name or ZIP code (e.g. "...near Denver, CO" or "...in 60601").`);
+        return;
+      }
+
+      document.querySelector('.hero').classList.add('searched');
       document.getElementById('toolbar').style.display = 'flex';
       document.getElementById('listings').innerHTML = '<div class="state-message"><div class="loading-spinner"></div><h3>Analyzing your needs...</h3><p>Finding the best storage match</p></div>';
 
-      const searchLocation = parsed.location || document.getElementById('searchInput').value.trim() || 'Miami, FL';
       const data = await fetchFacilities(searchLocation);
+      if (!data.facilities || !data.facilities.length || !data.location) {
+        showSearchError(`No storage facilities found near "${searchLocation}". Please try a different location.`);
+        return;
+      }
       allFacilities = data.facilities;
       buildHeroCarousel(allFacilities);
 
@@ -1428,11 +1460,10 @@
 
       document.querySelectorAll('#sizeFilter input, #featureFilter input, #priceFilter input').forEach(cb => cb.checked = false);
 
-      if (parsed.features.length) {
-        document.querySelectorAll('#featureFilter input').forEach(cb => {
-          cb.checked = parsed.features.includes(cb.value);
-        });
-      }
+      // NOTE: features are intentionally NOT auto-applied as filters because the
+      // server-side detectFeatures() only matches keywords in facility names, so a
+      // strict feature filter wipes out most real results. Features stay in
+      // window._aiParsed for use as a soft signal in renderAIInsights().
 
       applyFilters();
 
@@ -1578,17 +1609,25 @@
       const depth = dims[1] || 0;
       const sqft = width * depth;
 
+      // Build url + param helper that respects existing query strings
+      const addParam = (url, key, value) => {
+        if (!value) return url;
+        const [pathAndQuery, hash] = url.split('#');
+        const sep = pathAndQuery.includes('?') ? '&' : '?';
+        return pathAndQuery + sep + key + '=' + encodeURIComponent(value) + (hash ? '#' + hash : '');
+      };
+
       if (name.includes('public storage') && base.includes('publicstorage.com')) {
-        return base + (base.includes('?') ? '&' : '#') + 'startOrder';
+        return addParam(base, 'startOrder', '1');
       }
       if (name.includes('cubesmart') && base.includes('cubesmart.com')) {
-        return base.replace(/\/?$/, '/') + (unitSize ? `?size=${width}x${depth}` : '');
+        return unitSize ? addParam(base, 'size', `${width}x${depth}`) : base;
       }
       if ((name.includes('extra space') || name.includes('extraspace')) && base.includes('extraspace.com')) {
         return base + (unitSize ? `#size-${width}x${depth}` : '');
       }
       if (name.includes('life storage') && base.includes('lifestorage.com')) {
-        return base + (unitSize ? `?filterSize=${sqft}` : '');
+        return unitSize ? addParam(base, 'filterSize', sqft) : base;
       }
       if (name.includes('u-haul') && base.includes('uhaul.com')) {
         return base;
@@ -1636,16 +1675,32 @@
       const query = document.getElementById('searchInput').value.trim();
       if (!query) return;
       window._aiParsed = null;
+      document.querySelector('.hero').classList.add('searched');
       document.getElementById('toolbar').style.display = 'flex';
       const safeQ = query.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
       document.getElementById('listings').innerHTML = '<div class="state-message"><div class="loading-spinner"></div><h3>Searching near "'+safeQ+'"...</h3></div>';
 
       const data = await fetchFacilities(query);
+      if (!data.facilities || !data.facilities.length || !data.location) {
+        showSearchError(`No storage facilities found near "${query}". Please try a different location.`);
+        return;
+      }
       allFacilities = data.facilities;
       buildHeroCarousel(allFacilities);
       if (data.location) map.setView([data.location.lat, data.location.lng], 12);
       applyFilters();
       renderAIInsights(null);
+    }
+
+    function showSearchError(msg) {
+      document.querySelector('.hero').classList.remove('searched');
+      document.getElementById('toolbar').style.display = 'none';
+      document.getElementById('listings').innerHTML = `
+        <div class="state-message">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+          <h3>Couldn't find that location</h3>
+          <p>${msg.replace(/</g, '&lt;')}</p>
+        </div>`;
     }
 
     // ── Filters ──
