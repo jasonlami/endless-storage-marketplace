@@ -1772,13 +1772,13 @@
             ${f.features.map(ft => `<span class="feature-tag">${FEATURE_LABELS[ft]||ft}</span>`).join('')}
           </div>
           <div class="card-actions">
-            <a href="${f.website}" target="_blank" rel="noopener" class="btn-primary" onclick="event.stopPropagation(); trackClick('${f.id}')">
+            <a href="${f.website || f.mapsUrl || '#'}" target="_blank" rel="noopener" class="btn-primary" onclick="event.stopPropagation(); trackClick('${f.id}')">
               View Availability <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M7 17L17 7M17 7H7M17 7v10"/></svg>
             </a>
-            <a href="tel:${f.phone}" class="btn-secondary" onclick="event.stopPropagation()">
+            ${f.phone ? `<a href="tel:${f.phone}" class="btn-secondary" onclick="event.stopPropagation()">
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 16.92v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07 19.5 19.5 0 01-6-6 19.79 19.79 0 01-3.07-8.67A2 2 0 014.11 2h3a2 2 0 012 1.72c.127.96.361 1.903.7 2.81a2 2 0 01-.45 2.11L8.09 9.91a16 16 0 006 6l1.27-1.27a2 2 0 012.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0122 16.92z"/></svg>
               Call
-            </a>
+            </a>` : ''}
             <button class="btn-compare ${inCompare?'selected':''}" onclick="event.stopPropagation(); toggleCompare('${f.id}')">
               ${inCompare ? '&#10003; Added' : '+ Compare'}
             </button>
@@ -1825,7 +1825,7 @@
           <div class="compare-row"><span class="label">Features</span><span class="value">${f.features.length}</span></div>
           <div class="compare-row"><span class="label">Reviews</span><span class="value">${f.reviews}</span></div>
           ${f.promo ? `<div class="compare-row"><span class="label">Promo</span><span class="value" style="color:#92400e">${f.promo}</span></div>` : ''}
-          <div style="margin-top:8px"><a href="${f.website}" target="_blank" rel="noopener" class="btn-primary" style="font-size:0.8rem;padding:8px 14px;" onclick="trackClick('${f.id}')">View Availability</a></div>
+          <div style="margin-top:8px"><a href="${f.website || f.mapsUrl || '#'}" target="_blank" rel="noopener" class="btn-primary" style="font-size:0.8rem;padding:8px 14px;" onclick="trackClick('${f.id}')">View Availability</a></div>
         </div>
       `).join('');
     }
@@ -1844,7 +1844,7 @@
         const mk = L.marker([f.lat,f.lng],{icon}).addTo(map).bindPopup(`
           <div class="popup-name">${f.name}</div>
           <div class="popup-price">From $${Math.min(...f.units.map(u=>u.price))}/mo</div>
-          <a href="${f.website}" target="_blank" rel="noopener" class="popup-link" onclick="trackClick('${f.id}')">View Availability &rarr;</a>
+          <a href="${f.website || f.mapsUrl || '#'}" target="_blank" rel="noopener" class="popup-link" onclick="trackClick('${f.id}')">View Availability &rarr;</a>
         `);
         mk.on('click', () => highlightCard(i));
         markers.push(mk);
@@ -2139,7 +2139,7 @@
               <div class="sr-price">From $${Math.min(...firstCard.units.map(u=>u.price))}/mo</div>
               <div class="sr-detail">${firstCard.distance} mi &middot; ${starsHTML(firstCard.rating)} ${firstCard.rating} (${firstCard.reviews})</div>
             </div>
-            <a href="${firstCard.website}" target="_blank" rel="noopener" class="btn-primary" style="font-size:0.85rem;padding:10px 16px;" onclick="trackClick('${firstCard.id}')">
+            <a href="${firstCard.website || firstCard.mapsUrl || '#'}" target="_blank" rel="noopener" class="btn-primary" style="font-size:0.85rem;padding:10px 16px;" onclick="trackClick('${firstCard.id}')">
               View <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M7 17L17 7M17 7H7M17 7v10"/></svg>
             </a>
           </div>
@@ -2161,7 +2161,7 @@
                 <div class="sr-price">From $${Math.min(...f.units.map(u=>u.price))}/mo</div>
                 <div class="sr-detail">${f.distance} mi &middot; ${starsHTML(f.rating)} ${f.rating} (${f.reviews})</div>
               </div>
-              <a href="${f.website}" target="_blank" rel="noopener" class="btn-primary" style="font-size:0.85rem;padding:10px 16px;" onclick="trackClick('${f.id}')">
+              <a href="${f.website || f.mapsUrl || '#'}" target="_blank" rel="noopener" class="btn-primary" style="font-size:0.85rem;padding:10px 16px;" onclick="trackClick('${f.id}')">
                 View <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M7 17L17 7M17 7H7M17 7v10"/></svg>
               </a>
             </div>
