@@ -1,0 +1,14 @@
+{
+  "name": "endless-storage-marketplace",
+  "version": "1.0.0",
+  "description": "Endless Storage Marketplace — find and compare self-storage facilities",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node server.js"
+  },
+  "dependencies": {
+    "express": "^4.18.2",
+    "node-fetch": "^2.7.0"
+  }
+}
