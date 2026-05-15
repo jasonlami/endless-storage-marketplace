@@ -1888,7 +1888,13 @@
         renderResults();
       } else {
         document.getElementById('toolbar').scrollIntoView({ behavior: 'smooth' });
-        initSwipe();
+        // Go straight to swiping the current filteredFacilities so the toggle is
+        // a seamless List <-> Swipe view-switch (no separate setup wizard).
+        if (filteredFacilities && filteredFacilities.length) {
+          startSwiping(true);
+        } else {
+          initSwipe();
+        }
       }
     }
 
