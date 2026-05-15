@@ -1478,16 +1478,13 @@
         const res = await fetch(`/api/search?q=${encodeURIComponent(query)}`);
         const data = await res.json();
         if (data.error) {
-          console.warn('API error, using sample data:', data.error);
-          return { facilities: SAMPLE_DATA.map(f => ({ ...f, distance: parseFloat((0.5 + Math.random() * 8).toFixed(1)) })), location: { lat: 25.77, lng: -80.22 } };
-        }
-        if (!data.facilities.length) {
-          return { facilities: SAMPLE_DATA.map(f => ({ ...f, distance: parseFloat((0.5 + Math.random() * 8).toFixed(1)) })), location: data.location || { lat: 25.77, lng: -80.22 } };
+          console.warn('API error:', data.error);
+          return { facilities: [], location: null };
         }
         return data;
       } catch (err) {
-        console.warn('Network error, using sample data:', err);
-        return { facilities: SAMPLE_DATA.map(f => ({ ...f, distance: parseFloat((0.5 + Math.random() * 8).toFixed(1)) })), location: { lat: 25.77, lng: -80.22 } };
+        console.warn('Network error:', err);
+        return { facilities: [], location: null };
       }
     }
 
