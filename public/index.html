@@ -602,10 +602,14 @@
       background: var(--gray-50); border: 1px solid var(--gray-200); border-radius: var(--radius);
       padding: 7px 4px; text-align: center; min-height: 52px;
       display: flex; flex-direction: column; align-items: center; justify-content: center;
+      cursor: pointer; transition: all 0.15s ease; text-decoration: none;
     }
+    .unit-pill:hover { border-color: var(--green-500); background: var(--green-50); transform: translateY(-1px); box-shadow: 0 2px 4px rgba(0,0,0,0.08); }
     .unit-pill .size { font-size: 0.72rem; font-weight: 600; color: var(--gray-500); }
     .unit-pill .fits { display: none; }
     .unit-pill .price { font-size: 0.88rem; font-weight: 800; color: var(--green-900); line-height: 1.3; }
+    .unit-pill .reserve-hint { font-size: 0.6rem; color: var(--green-700); opacity: 0; transition: opacity 0.15s; margin-top: 1px; }
+    .unit-pill:hover .reserve-hint { opacity: 1; }
 
     /* ── Price bar ── */
     .price-bar-wrap { margin-bottom: 12px; }
@@ -1536,6 +1540,33 @@
       document.getElementById('priceLockModal').classList.remove('open');
     }
 
+    // ── Build reservation URL: deep-link to unit size where provider supports it ──
+    function getReservationUrl(facility, unitSize) {
+      const base = facility.website || facility.mapsUrl || '#';
+      const name = (facility.name || '').toLowerCase();
+      const dims = unitSize ? unitSize.split('x').map(Number) : [];
+      const width = dims[0] || 0;
+      const depth = dims[1] || 0;
+      const sqft = width * depth;
+
+      if (name.includes('public storage') && base.includes('publicstorage.com')) {
+        return base + (base.includes('?') ? '&' : '#') + 'startOrder';
+      }
+      if (name.includes('cubesmart') && base.includes('cubesmart.com')) {
+        return base.replace(/\/?$/, '/') + (unitSize ? `?size=${width}x${depth}` : '');
+      }
+      if ((name.includes('extra space') || name.includes('extraspace')) && base.includes('extraspace.com')) {
+        return base + (unitSize ? `#size-${width}x${depth}` : '');
+      }
+      if (name.includes('life storage') && base.includes('lifestorage.com')) {
+        return base + (unitSize ? `?filterSize=${sqft}` : '');
+      }
+      if (name.includes('u-haul') && base.includes('uhaul.com')) {
+        return base;
+      }
+      return base;
+    }
+
     // ── AI badge for cards ──
     function getAIBadges(f) {
       const insights = computeInsights();
@@ -1763,7 +1794,7 @@
             ${deal ? `<span class="badge badge-deal">&#10003; ${deal}</span>` : ''}
           </div>
           <div class="card-units">
-            ${f.units.map(u => `<div class="unit-pill"><div class="size">${u.size}</div><div class="fits">${(SIZE_INFO[u.size]||{}).fits||''}</div><div class="price">${u.estimated ? '~' : ''}$${u.price}/mo</div></div>`).join('')}
+            ${f.units.map(u => `<a href="${getReservationUrl(f, u.size)}" target="_blank" rel="noopener" class="unit-pill" onclick="event.stopPropagation(); trackClick('${f.id}')"><div class="size">${u.size}</div><div class="fits">${(SIZE_INFO[u.size]||{}).fits||''}</div><div class="price">${u.estimated ? '~' : ''}$${u.price}/mo</div><div class="reserve-hint">Reserve →</div></a>`).join('')}
           </div>
           ${f.estimatedPricing ? '<div style="font-size:0.65rem;color:var(--gray-400);margin:-6px 0 8px 2px;">~ Estimated pricing &mdash; verify on facility site</div>' : ''}
           <div style="margin-bottom:10px;">
@@ -1780,8 +1811,8 @@
             ${f.features.map(ft => `<span class="feature-tag">${FEATURE_LABELS[ft]||ft}</span>`).join('')}
           </div>
           <div class="card-actions">
-            <a href="${f.website || f.mapsUrl || '#'}" target="_blank" rel="noopener" class="btn-primary" onclick="event.stopPropagation(); trackClick('${f.id}')">
-              View Availability <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M7 17L17 7M17 7H7M17 7v10"/></svg>
+            <a href="${getReservationUrl(f, null)}" target="_blank" rel="noopener" class="btn-primary" onclick="event.stopPropagation(); trackClick('${f.id}')">
+              Reserve a Unit <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M7 17L17 7M17 7H7M17 7v10"/></svg>
             </a>
             ${f.phone ? `<a href="tel:${f.phone}" class="btn-secondary" onclick="event.stopPropagation()">
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 16.92v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07 19.5 19.5 0 01-6-6 19.79 19.79 0 01-3.07-8.67A2 2 0 014.11 2h3a2 2 0 012 1.72c.127.96.361 1.903.7 2.81a2 2 0 01-.45 2.11L8.09 9.91a16 16 0 006 6l1.27-1.27a2 2 0 012.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0122 16.92z"/></svg>
@@ -1833,7 +1864,7 @@
           <div class="compare-row"><span class="label">Features</span><span class="value">${f.features.length}</span></div>
           <div class="compare-row"><span class="label">Reviews</span><span class="value">${f.reviews}</span></div>
           ${f.features.length ? `<div class="compare-row"><span class="label">Features</span><span class="value">${f.features.map(ft => FEATURE_LABELS[ft]||ft).join(', ')}</span></div>` : ''}
-          <div style="margin-top:8px"><a href="${f.website || f.mapsUrl || '#'}" target="_blank" rel="noopener" class="btn-primary" style="font-size:0.8rem;padding:8px 14px;" onclick="trackClick('${f.id}')">View Availability</a></div>
+          <div style="margin-top:8px"><a href="${getReservationUrl(f, null)}" target="_blank" rel="noopener" class="btn-primary" style="font-size:0.8rem;padding:8px 14px;" onclick="trackClick('${f.id}')">Reserve a Unit</a></div>
         </div>
       `).join('');
     }
@@ -1852,7 +1883,7 @@
         const mk = L.marker([f.lat,f.lng],{icon}).addTo(map).bindPopup(`
           <div class="popup-name">${f.name}</div>
           <div class="popup-price">From $${Math.min(...f.units.map(u=>u.price))}/mo</div>
-          <a href="${f.website || f.mapsUrl || '#'}" target="_blank" rel="noopener" class="popup-link" onclick="trackClick('${f.id}')">View Availability &rarr;</a>
+          <a href="${getReservationUrl(f, null)}" target="_blank" rel="noopener" class="popup-link" onclick="trackClick('${f.id}')">Reserve a Unit &rarr;</a>
         `);
         mk.on('click', () => highlightCard(i));
         markers.push(mk);
