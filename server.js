@@ -7,6 +7,9 @@ const app = express();
 const PORT = process.env.PORT || 3000;
 const GOOGLE_API_KEY = process.env.GOOGLE_PLACES_API_KEY || '';
 
+const searchCache = new Map();
+const CACHE_TTL = 10 * 60 * 1000;
+
 app.use(express.static(path.join(__dirname, 'public')));
 app.use(express.json());
 
@@ -36,7 +39,14 @@ app.get('/api/search', async (req, res) => {
     const geo = await geocode(query);
     if (!geo) return res.json({ facilities: [], location: null });
 
-    const radius = req.query.radius || 16093; // ~10 miles default
+    const radius = Math.min(Math.max(parseInt(req.query.radius, 10) || 16093, 1000), 50000);
+
+    const cacheKey = `${geo.lat.toFixed(4)},${geo.lng.toFixed(4)}_${radius}`;
+    const cached = searchCache.get(cacheKey);
+    if (cached && Date.now() - cached.ts < CACHE_TTL) {
+      return res.json(cached.data);
+    }
+
     const nearbyUrl = `https://maps.googleapis.com/maps/api/place/nearbysearch/json?location=${geo.lat},${geo.lng}&radius=${radius}&keyword=self+storage&type=storage&key=${GOOGLE_API_KEY}`;
     const nearbyRes = await fetch(nearbyUrl);
     const nearbyData = await nearbyRes.json();
@@ -106,7 +116,14 @@ app.get('/api/search', async (req, res) => {
     const facilities = (await Promise.all(detailPromises)).filter(Boolean);
     facilities.sort((a, b) => a.distance - b.distance);
 
-    res.json({ facilities, location: geo });
+    const result = { facilities, location: geo };
+    searchCache.set(cacheKey, { data: result, ts: Date.now() });
+    if (searchCache.size > 100) {
+      const oldest = searchCache.keys().next().value;
+      searchCache.delete(oldest);
+    }
+
+    res.json(result);
   } catch (err) {
     console.error('Search error:', err);
     res.status(500).json({ error: 'Search failed' });
@@ -117,8 +134,9 @@ app.get('/api/search', async (req, res) => {
 app.get('/api/photo', async (req, res) => {
   try {
     const ref = req.query.ref;
-    const w = req.query.w || 400;
+    const w = Math.min(Math.max(parseInt(req.query.w, 10) || 400, 50), 1600);
     if (!ref || !GOOGLE_API_KEY) return res.status(400).send('Missing params');
+    if (!/^[A-Za-z0-9_-]+$/.test(ref)) return res.status(400).send('Invalid photo reference');
 
     const photoUrl = `https://maps.googleapis.com/maps/api/place/photo?maxwidth=${w}&photo_reference=${ref}&key=${GOOGLE_API_KEY}`;
     const photoRes = await fetch(photoUrl, { redirect: 'follow' });

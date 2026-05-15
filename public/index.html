@@ -611,6 +611,12 @@
     .unit-pill .reserve-hint { font-size: 0.6rem; color: var(--green-700); opacity: 0; transition: opacity 0.15s; margin-top: 1px; }
     .unit-pill:hover .reserve-hint { opacity: 1; }
 
+    .unit-pill:focus-visible, .btn-primary:focus-visible, .btn-secondary:focus-visible,
+    .btn-compare:focus-visible, .fav-btn:focus-visible, .filter-btn:focus-visible,
+    .site-nav-link:focus-visible, .site-nav-cta:focus-visible {
+      outline: 2px solid var(--green-700); outline-offset: 2px;
+    }
+
     /* ── Price bar ── */
     .price-bar-wrap { margin-bottom: 12px; }
     .price-bar-label { font-size: 0.72rem; color: var(--gray-500); margin-bottom: 4px; display: flex; justify-content: space-between; }
@@ -1233,6 +1239,8 @@
   </div>
 
   <script>
+    function esc(s) { const d = document.createElement('div'); d.textContent = s; return d.innerHTML; }
+
     // ── State ──
     let map, markers = [], allFacilities = [], filteredFacilities = [];
     let favorites = new Set();
@@ -1468,17 +1476,17 @@
 
       chips += `<span class="ai-insight">
         <svg viewBox="0 0 24 24" fill="none" stroke="#10b981" stroke-width="2"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5"/></svg>
-        Best Deal: <strong>${insights.bestValue.facility.name}</strong> &mdash; from $${Math.min(...insights.bestValue.facility.units.map(u=>u.price))}/mo
+        Best Deal: <strong>${esc(insights.bestValue.facility.name)}</strong> &mdash; from $${Math.min(...insights.bestValue.facility.units.map(u=>u.price))}/mo
       </span>`;
 
       chips += `<span class="ai-insight">
         <svg viewBox="0 0 24 24" fill="none" stroke="#f59e0b" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>
-        Closest: <strong>${insights.closest.name}</strong> (${insights.closest.distance} mi)
+        Closest: <strong>${esc(insights.closest.name)}</strong> (${insights.closest.distance} mi)
       </span>`;
 
       chips += `<span class="ai-insight">
         <svg viewBox="0 0 24 24" fill="none" stroke="#8b5cf6" stroke-width="2"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
-        Top Rated: <strong>${insights.topRated.name}</strong> (${insights.topRated.rating}&#9733;, ${insights.topRated.reviews} reviews)
+        Top Rated: <strong>${esc(insights.topRated.name)}</strong> (${insights.topRated.rating}&#9733;, ${insights.topRated.reviews} reviews)
       </span>`;
 
       chips += `<span class="ai-insight">
@@ -1513,7 +1521,7 @@
           <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#f59e0b" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0110 0v4"/></svg>
           Price Lock Guarantee
         </h2>
-        <p class="pl-subtitle">Lock in today's rate at ${f.name} for 12 months. No rent increases for a full year, guaranteed by Endless Storage.</p>
+        <p class="pl-subtitle">Lock in today's rate at ${esc(f.name)} for 12 months. No rent increases for a full year, guaranteed by Endless Storage.</p>
         ${f.units.map(u => {
           const fee = calcPriceLockFee(u.price, u.size);
           const range = getMarketPriceRange(u.size);
@@ -1741,7 +1749,7 @@
         <div class="ai-rec-body">
           <div class="ai-rec-label">Endless AI Recommendation</div>
           <div class="ai-rec-text">
-            <strong>${top.name}</strong> is your best match — ${why}.${sizeNote}
+            <strong>${esc(top.name)}</strong> is your best match — ${why}.${sizeNote}
             ${filteredFacilities.length > 1 ? ` We found ${filteredFacilities.length - 1} other option${filteredFacilities.length > 2 ? 's' : ''} worth comparing below.` : ''}
           </div>
           <a class="ai-rec-cta" onclick="highlightFacility(0)">View this facility &#8594;</a>
@@ -1773,7 +1781,7 @@
           ${buildPhotoCarouselHTML(f, 'card-carousel', f.id)}
           <div class="card-content">
           <div class="card-header">
-            <h3>${f.name}</h3>
+            <h3>${esc(f.name)}</h3>
             <div class="card-header-right">
               <span class="card-distance">${f.distance} mi</span>
               <button class="fav-btn ${isFav?'saved':''}" onclick="event.stopPropagation(); toggleFav('${f.id}')" title="Save">
@@ -1781,7 +1789,7 @@
               </button>
             </div>
           </div>
-          <div class="card-address">${f.address}, ${f.city}, ${f.state} ${f.zip}</div>
+          <div class="card-address">${esc(f.address)}, ${esc(f.city)}, ${esc(f.state)} ${esc(f.zip)}</div>
           <div class="card-meta">
             <div class="card-rating">
               <span class="stars">${starsHTML(f.rating)}</span>
@@ -1855,7 +1863,7 @@
 
       document.getElementById('compareGrid').innerHTML = facilities.map(f => `
         <div class="compare-col">
-          <h5>${f.name}</h5>
+          <h5>${esc(f.name)}</h5>
           <div class="compare-rating">${starsHTML(f.rating)} ${f.rating}</div>
           <div class="compare-row"><span class="label">Distance</span><span class="value">${f.distance} mi</span></div>
           ${sizes.map(s => {
@@ -1882,7 +1890,7 @@
       filteredFacilities.forEach((f, i) => {
         const icon = L.divIcon({ className: '', html: `<div class="map-marker" data-index="${i}">${i+1}</div>`, iconSize:[32,32], iconAnchor:[16,16] });
         const mk = L.marker([f.lat,f.lng],{icon}).addTo(map).bindPopup(`
-          <div class="popup-name">${f.name}</div>
+          <div class="popup-name">${esc(f.name)}</div>
           <div class="popup-price">From $${Math.min(...f.units.map(u=>u.price))}/mo</div>
           <a href="${getReservationUrl(f, null)}" target="_blank" rel="noopener" class="popup-link" onclick="trackClick('${f.id}')">Reserve a Unit &rarr;</a>
         `);
@@ -2062,8 +2070,8 @@
           <div class="swipe-overlay swipe-overlay-pass">PASS</div>
         </div>
         <div class="swipe-card-body">
-          <h3>${f.name}</h3>
-          <div class="swipe-address">${f.address}, ${f.city}, ${f.state} ${f.zip}</div>
+          <h3>${esc(f.name)}</h3>
+          <div class="swipe-address">${esc(f.address)}, ${esc(f.city)}, ${esc(f.state)} ${esc(f.zip)}</div>
           <div class="swipe-meta">
             <div class="swipe-rating"><span class="stars">${starsHTML(f.rating)}</span> <strong>${f.rating}</strong> <span class="review-count">(${f.reviews})</span></div>
             <span class="swipe-dist">${f.distance} mi</span>
@@ -2172,7 +2180,7 @@
         <div class="sr-list">
           <div class="sr-card">
             <div class="sr-card-info">
-              <h4>${firstCard.name}</h4>
+              <h4>${esc(firstCard.name)}</h4>
               <div class="sr-price">From $${Math.min(...firstCard.units.map(u=>u.price))}/mo</div>
               <div class="sr-detail">${firstCard.distance} mi &middot; ${starsHTML(firstCard.rating)} ${firstCard.rating} (${firstCard.reviews})</div>
             </div>
@@ -2194,7 +2202,7 @@
           ${restCards.map(f => `
             <div class="sr-card ${hasGate ? 'blurred' : ''}">
               <div class="sr-card-info">
-                <h4>${f.name}</h4>
+                <h4>${esc(f.name)}</h4>
                 <div class="sr-price">From $${Math.min(...f.units.map(u=>u.price))}/mo</div>
                 <div class="sr-detail">${f.distance} mi &middot; ${starsHTML(f.rating)} ${f.rating} (${f.reviews})</div>
               </div>
@@ -2337,8 +2345,8 @@
         el.innerHTML = `
           <div class="hc-image" style="background:url('${photo}') center/cover no-repeat"><span class="hc-badge">${badges[i] || ''}</span></div>
           <div class="hc-body">
-            <h4>${f.name}</h4>
-            <div class="hc-addr">${f.address}, ${f.city}, ${f.state}</div>
+            <h4>${esc(f.name)}</h4>
+            <div class="hc-addr">${esc(f.address)}, ${esc(f.city)}, ${esc(f.state)}</div>
             <div class="hc-chips">${sizes.map(u => `<div class="hc-chip"><div class="hc-size">${u.size}</div><div class="hc-price">~$${u.price}/mo</div></div>`).join('')}</div>
             <div class="hc-row"><span class="hc-stars">${starsHTML(f.rating)}</span> <span class="hc-dist">${f.rating}${f.distance != null ? ` · ${f.distance} mi` : ''}</span></div>
           </div>`;
