@@ -636,6 +636,49 @@
     .unit-pill .price { font-size: 0.88rem; font-weight: 800; color: var(--green-900); line-height: 1.3; }
     .unit-pill .reserve-hint { font-size: 0.6rem; color: var(--green-700); opacity: 0; transition: opacity 0.15s; margin-top: 1px; }
     .unit-pill:hover .reserve-hint { opacity: 1; }
+    .unit-pill.verified { background: var(--green-50); border-color: var(--green-500); }
+    .unit-pill.verified .reserve-hint { opacity: 1; color: var(--green-700); font-weight: 600; }
+    button.unit-pill { font-family: inherit; position: relative; }
+    .unit-pill.promo { background: linear-gradient(135deg, #fff7ed 0%, #ffedd5 100%); border-color: #fb923c; }
+    .pill-promo-badge { position: absolute; top: 2px; right: 4px; background: #f97316; color: white; font-size: 0.55rem; font-weight: 800; letter-spacing: 0.04em; padding: 1px 5px; border-radius: 4px; }
+    .drill-tags { display: flex; gap: 4px; margin-top: 4px; }
+    .drill-tag { font-size: 0.62rem; font-weight: 700; letter-spacing: 0.04em; padding: 2px 6px; border-radius: 4px; }
+    .drill-tag-promo { background: #fed7aa; color: #9a3412; }
+    .drill-tag-web { background: #dbeafe; color: #1e40af; }
+    .drill-tag-street { background: #fef3c7; color: #92400e; }
+    .units-loading { display: grid; grid-template-columns: repeat(3, 1fr); gap: 5px; margin-bottom: 10px; }
+    .units-loading-skel { height: 52px; border-radius: var(--radius); background: linear-gradient(90deg, var(--gray-100) 0%, var(--gray-200) 50%, var(--gray-100) 100%); background-size: 200% 100%; animation: skeleton-shimmer 1.4s ease-in-out infinite; }
+    @keyframes skeleton-shimmer { 0% { background-position: 200% 0; } 100% { background-position: -200% 0; } }
+    .units-empty { font-size: 0.75rem; color: var(--gray-500); padding: 10px 12px; background: var(--gray-50); border: 1px dashed var(--gray-200); border-radius: var(--radius); margin-bottom: 10px; }
+
+    /* Drill-down modal for bundled size pricing */
+    .drill-modal { display: none; position: fixed; inset: 0; z-index: 2000; }
+    .drill-modal.open { display: block; }
+    .drill-backdrop { position: absolute; inset: 0; background: rgba(0,0,0,0.5); }
+    .drill-panel { position: relative; max-width: 560px; width: calc(100% - 32px); max-height: 85vh; margin: 5vh auto; background: white; border-radius: 16px; box-shadow: 0 20px 60px rgba(0,0,0,0.3); display: flex; flex-direction: column; overflow: hidden; }
+    .drill-close { position: absolute; top: 12px; right: 16px; background: none; border: none; font-size: 1.8rem; color: var(--gray-500); cursor: pointer; line-height: 1; padding: 4px 8px; }
+    .drill-close:hover { color: var(--gray-900); }
+    .drill-header { padding: 22px 24px 14px; border-bottom: 1px solid var(--gray-100); }
+    .drill-title { font-size: 1.15rem; font-weight: 700; color: var(--gray-900); margin-bottom: 4px; padding-right: 30px; }
+    .drill-subtitle { font-size: 0.85rem; color: var(--gray-600); }
+    .drill-body { overflow-y: auto; padding: 8px 0; flex: 1; }
+    .drill-row { display: flex; gap: 16px; padding: 14px 24px; border-bottom: 1px solid var(--gray-100); }
+    .drill-row:last-child { border-bottom: none; }
+    .drill-price { font-size: 1.3rem; font-weight: 800; color: var(--green-900); min-width: 78px; }
+    .drill-mo { font-size: 0.75rem; font-weight: 600; color: var(--gray-500); }
+    .drill-meta { flex: 1; min-width: 0; }
+    .drill-source-title { font-size: 0.85rem; font-weight: 600; color: var(--gray-900); margin-bottom: 4px; }
+    .drill-source-snippet { font-size: 0.78rem; color: var(--gray-600); margin-bottom: 6px; line-height: 1.4; }
+    .drill-source-link { font-size: 0.75rem; color: var(--green-700); text-decoration: none; font-weight: 600; }
+    .drill-source-link:hover { text-decoration: underline; }
+    .drill-footer { padding: 16px 24px; border-top: 1px solid var(--gray-100); background: var(--gray-50); }
+    .drill-reserve { display: block; text-align: center; background: var(--green-700); color: white; padding: 12px 16px; border-radius: var(--radius); text-decoration: none; font-weight: 700; font-size: 0.92rem; }
+    .drill-reserve:hover { background: var(--green-900); }
+    @media (max-width: 768px) {
+      .drill-panel { margin: auto; max-height: 90vh; border-radius: 16px 16px 0 0; align-self: flex-end; }
+      .drill-modal { display: none; align-items: flex-end; }
+      .drill-modal.open { display: flex; }
+    }
 
     .unit-pill:focus-visible, .btn-primary:focus-visible, .btn-secondary:focus-visible,
     .btn-compare:focus-visible, .fav-btn:focus-visible, .filter-btn:focus-visible,
@@ -1581,47 +1624,46 @@
 
       applyFilters();
 
-      if (parsed.maxPrice) {
-        filteredFacilities = filteredFacilities.filter(f => f.units.some(u => u.price <= parsed.maxPrice));
-      }
+      // maxDist is independent of pricing — apply immediately
       if (parsed.maxDist) {
         filteredFacilities = filteredFacilities.filter(f => parseFloat(f.distance) <= parsed.maxDist);
       }
-
-      filteredFacilities.forEach(f => {
-        f._aiMatch = f.units.some(u => u.size === parsed.recommendedSize);
-      });
-      filteredFacilities.sort((a,b) => (b._aiMatch?1:0) - (a._aiMatch?1:0) || a.distance - b.distance);
+      // parsed.maxPrice / recommendedSize depend on real prices — applied later in enrichAllFacilities
+      filteredFacilities.sort((a,b) => a.distance - b.distance);
 
       window._aiParsed = parsed;
       document.getElementById('resultsCount').textContent = filteredFacilities.length + ' facilities found';
       renderResults();
       renderAIInsights(parsed);
       updateMapMarkers();
+      enrichAllFacilities();
     }
 
     document.getElementById('aiSearchInput').addEventListener('keydown', e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleAISearch(); } });
 
-    // ── AI Insights Engine ──
+    // ── AI Insights Engine — computes only over facilities that have real pricing loaded ──
     function computeInsights() {
       if (!allFacilities.length) return {};
-      const allPrices = allFacilities.flatMap(f => f.units.map(u => u.price));
-      const avgPrice = Math.round(allPrices.reduce((a,b)=>a+b,0) / allPrices.length);
+      const priced = allFacilities.filter(hasPricing);
+      const allPrices = priced.flatMap(f => f.units.map(u => u.price));
+      const avgPrice = allPrices.length ? Math.round(allPrices.reduce((a,b)=>a+b,0) / allPrices.length) : null;
 
-      const cheapest = allFacilities.reduce((best, f) => {
-        const mp = Math.min(...f.units.map(u => u.price));
-        return mp < best.price ? { facility: f, price: mp } : best;
+      const cheapest = priced.reduce((best, f) => {
+        const mp = safeMinPrice(f);
+        return (mp !== null && mp < best.price) ? { facility: f, price: mp } : best;
       }, { facility: null, price: Infinity });
 
       const closest = [...allFacilities].sort((a,b) => a.distance - b.distance)[0];
       const topRated = [...allFacilities].sort((a,b) => b.rating - a.rating || b.reviews - a.reviews)[0];
 
-      const bestValue = allFacilities.reduce((best, f) => {
-        const score = f.rating * 20 - Math.min(...f.units.map(u => u.price)) * 0.5 - f.distance * 2;
+      const bestValue = priced.reduce((best, f) => {
+        const mp = safeMinPrice(f);
+        if (mp === null) return best;
+        const score = f.rating * 20 - mp * 0.5 - f.distance * 2;
         return score > best.score ? { facility: f, score } : best;
       }, { facility: null, score: -Infinity });
 
-      return { avgPrice, cheapest, closest, topRated, bestValue };
+      return { avgPrice, cheapest, closest, topRated, bestValue, pricedCount: priced.length };
     }
 
     function renderAIInsights(aiParsed) {
@@ -1639,10 +1681,12 @@
         </span>`;
       }
 
-      chips += `<span class="ai-insight">
-        <svg viewBox="0 0 24 24" fill="none" stroke="#10b981" stroke-width="2"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5"/></svg>
-        Best Deal: <strong>${esc(insights.bestValue.facility.name)}</strong> &mdash; from $${Math.min(...insights.bestValue.facility.units.map(u=>u.price))}/mo
-      </span>`;
+      if (insights.bestValue?.facility) {
+        chips += `<span class="ai-insight">
+          <svg viewBox="0 0 24 24" fill="none" stroke="#10b981" stroke-width="2"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5"/></svg>
+          Best Deal: <strong>${esc(insights.bestValue.facility.name)}</strong> &mdash; from $${safeMinPrice(insights.bestValue.facility)}/mo
+        </span>`;
+      }
 
       chips += `<span class="ai-insight">
         <svg viewBox="0 0 24 24" fill="none" stroke="#f59e0b" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>
@@ -1715,6 +1759,14 @@
     }
 
     // ── Build reservation URL: deep-link to unit size where provider supports it ──
+    // Returns lowest priced unit for a facility, or null if no real prices loaded yet.
+    function safeMinPrice(f) {
+      if (!f.units || !f.units.length) return null;
+      const prices = f.units.map(u => u.price).filter(p => Number.isFinite(p));
+      return prices.length ? Math.min(...prices) : null;
+    }
+    function hasPricing(f) { return f.pricingLoaded && f.units && f.units.length > 0; }
+
     function getReservationUrl(facility, unitSize) {
       const base = facility.website || facility.mapsUrl || '#';
       const name = (facility.name || '').toLowerCase();
@@ -1749,6 +1801,187 @@
       return base;
     }
 
+    // ── Unit pricing render helpers — all prices are real-time SerpAPI data, no dummy fallbacks ──
+    function renderUnitsHTML(f) {
+      if (!f.pricingLoaded) {
+        return '<div class="units-loading"><div class="units-loading-skel"></div><div class="units-loading-skel"></div><div class="units-loading-skel"></div></div>';
+      }
+      if (!f.units || !f.units.length) {
+        if (f.pricingError === 'unavailable' || f.pricingQuotaExceeded) {
+          return '<div class="units-empty">Pricing service temporarily unavailable &mdash; check facility website for rates</div>';
+        }
+        if (f.pricingError) {
+          return '<div class="units-empty">Couldn\'t load pricing &mdash; contact facility for rates</div>';
+        }
+        return '<div class="units-empty">Pricing not published online &mdash; contact facility for rates</div>';
+      }
+      return f.units.map(u => {
+        const priceText = u.priceMin === u.priceMax ? `$${u.priceMin}/mo` : `$${u.priceMin}&ndash;$${u.priceMax}`;
+        const subText = u.sampleCount > 1 ? `${u.sampleCount} options` : '1 option';
+        const promoBadge = u.hasPromo ? '<span class="pill-promo-badge">PROMO</span>' : '';
+        return `<button class="unit-pill verified${u.hasPromo ? ' promo' : ''}" onclick="event.stopPropagation(); openSizeDrillDown('${f.id}', '${u.size}')">${promoBadge}<div class="size">${u.size}</div><div class="fits">${(SIZE_INFO[u.size]||{}).fits||''}</div><div class="price">${priceText}</div><div class="reserve-hint">${subText} &rsaquo;</div></button>`;
+      }).join('');
+    }
+    function renderDisclaimerHTML(f) {
+      if (!f.pricingLoaded || !f.units?.length) return '';
+      const freshness = formatPricingFreshness(f);
+      const feeNote = f.adminFee ? ` &middot; +$${f.adminFee} admin fee` : '';
+      return `<div style="font-size:0.65rem;color:var(--gray-500);margin:-6px 0 8px 2px;">${freshness ? freshness + ' &middot; ' : ''}live operator rates${feeNote} &middot; click for details</div>`;
+    }
+
+    async function fetchPricingForFacility(f) {
+      if (f.pricingLoaded || f._pricingFetching) return;
+      f._pricingFetching = true;
+      try {
+        const params = new URLSearchParams({
+          name: f.name,
+          address: `${f.address}, ${f.city}, ${f.state} ${f.zip}`,
+          website: f.website || ''
+        });
+        const res = await fetch(`/api/pricing?${params}`);
+        if (res.ok) {
+          const data = await res.json();
+          f.units = (data.prices || []).map(p => ({
+            size: p.size,
+            price: p.min,
+            priceMin: p.min,
+            priceMax: p.max,
+            priceMedian: p.median,
+            sampleCount: p.count,
+            breakdown: p.prices,
+            hasPromo: p.hasPromo,
+            webMin: p.webMin,
+            webMax: p.webMax,
+            streetMin: p.streetMin,
+            streetMax: p.streetMax,
+          }));
+          f.sources = data.sources || [];
+          f.adminFee = data.adminFee;
+          f.pricingFetchedAt = data.fetchedAt;
+          f.pricingCacheAgeMinutes = data.cacheAgeMinutes;
+          f.pricingQuotaExceeded = data.quotaExceeded === true;
+        } else if (res.status === 503) {
+          f.pricingError = 'unavailable';
+        } else {
+          f.pricingError = `http_${res.status}`;
+        }
+      } catch (e) {
+        console.warn('Pricing fetch failed for', f.name, e.message);
+      } finally {
+        f.pricingLoaded = true;
+        f._pricingFetching = false;
+        const unitsEl = document.querySelector(`.card-units[data-fac-id="${f.id}"]`);
+        const disclEl = document.querySelector(`.card-pricing-disclaimer[data-fac-id="${f.id}"]`);
+        if (unitsEl) unitsEl.innerHTML = renderUnitsHTML(f);
+        if (disclEl) disclEl.innerHTML = renderDisclaimerHTML(f);
+      }
+    }
+
+    // Format the cache age for display
+    function formatPricingFreshness(f) {
+      const m = f.pricingCacheAgeMinutes;
+      if (m == null) return '';
+      if (m < 5) return 'Live';
+      if (m < 60) return `Updated ${m} min ago`;
+      const h = Math.round(m / 60);
+      if (h < 24) return `Updated ${h}h ago`;
+      const d = Math.round(h / 24);
+      return `Updated ${d}d ago`;
+    }
+
+    async function enrichAllFacilities() {
+      const targets = allFacilities.filter(f => !f.pricingLoaded);
+      await Promise.all(targets.map(fetchPricingForFacility));
+      // After all pricing arrives:
+      // (a) apply deferred AI-parser filters that depend on real prices
+      // (b) re-apply user sort/filter if affected
+      // (c) refresh AI insights with full data
+      const parsed = window._aiParsed;
+      if (parsed) {
+        if (parsed.maxPrice) {
+          filteredFacilities = filteredFacilities.filter(f => !hasPricing(f) || f.units.some(u => u.price <= parsed.maxPrice));
+        }
+        if (parsed.recommendedSize) {
+          filteredFacilities.forEach(f => { f._aiMatch = f.units?.some(u => u.size === parsed.recommendedSize) || false; });
+          filteredFacilities.sort((a, b) => (b._aiMatch ? 1 : 0) - (a._aiMatch ? 1 : 0) || a.distance - b.distance);
+        }
+        document.getElementById('resultsCount').textContent = filteredFacilities.length + ' facilities found';
+      }
+      const sort = document.getElementById('sortSelect')?.value;
+      if (sort === 'price_low' || sort === 'price_high') {
+        applyFilters();
+      } else if (currentView === 'list') {
+        renderResults();
+      }
+      renderAIInsights(parsed);
+    }
+
+    // Drill-down modal: shows every individual price point for a size, with sources + reserve CTA
+    function openSizeDrillDown(facilityId, size) {
+      const f = filteredFacilities.find(x => String(x.id) === String(facilityId)) ||
+                allFacilities.find(x => String(x.id) === String(facilityId));
+      if (!f) return;
+      const u = (f.units || []).find(x => x.size === size);
+      if (!u || !u.breakdown?.length) return;
+
+      let modal = document.getElementById('drillDownModal');
+      if (!modal) {
+        modal = document.createElement('div');
+        modal.id = 'drillDownModal';
+        modal.className = 'drill-modal';
+        modal.innerHTML = `
+          <div class="drill-backdrop" onclick="closeDrillDown()"></div>
+          <div class="drill-panel" role="dialog" aria-modal="true">
+            <button class="drill-close" onclick="closeDrillDown()" aria-label="Close">&times;</button>
+            <div class="drill-header">
+              <div class="drill-title"></div>
+              <div class="drill-subtitle"></div>
+            </div>
+            <div class="drill-body"></div>
+            <div class="drill-footer">
+              <a class="drill-reserve" target="_blank" rel="noopener">Reserve at facility &rarr;</a>
+            </div>
+          </div>`;
+        document.body.appendChild(modal);
+      }
+      modal.querySelector('.drill-title').textContent = `${size} units at ${f.name}`;
+      const promoNote = u.hasPromo ? ' · ⚡ Promo rate' : '';
+      const feeNote = f.adminFee ? ` · +$${f.adminFee} one-time admin fee` : '';
+      const freshness = formatPricingFreshness(f);
+      const freshnessNote = freshness ? ` · ${freshness}` : '';
+      modal.querySelector('.drill-subtitle').textContent =
+        `${u.sampleCount} price point${u.sampleCount > 1 ? 's' : ''} found · $${u.priceMin}–$${u.priceMax}/mo${promoNote}${feeNote}${freshnessNote}`;
+      modal.querySelector('.drill-body').innerHTML = u.breakdown.map(p => {
+        const cleanTitle = (p.title || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+        const cleanSnippet = (p.snippet || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').slice(0, 220);
+        let host = '';
+        try { host = new URL(p.source).hostname.replace(/^www\./, ''); } catch (_) {}
+        const tags = [];
+        if (p.isPromo) tags.push('<span class="drill-tag drill-tag-promo">Promo</span>');
+        if (p.rateType === 'web') tags.push('<span class="drill-tag drill-tag-web">Online</span>');
+        else if (p.rateType === 'street') tags.push('<span class="drill-tag drill-tag-street">In-store</span>');
+        return `
+          <div class="drill-row">
+            <div class="drill-price">$${p.price}<span class="drill-mo">/mo</span>${tags.length ? `<div class="drill-tags">${tags.join('')}</div>` : ''}</div>
+            <div class="drill-meta">
+              <div class="drill-source-title">${cleanTitle}</div>
+              <div class="drill-source-snippet">${cleanSnippet}</div>
+              <a class="drill-source-link" href="${p.source}" target="_blank" rel="noopener">View on ${host} &nearr;</a>
+            </div>
+          </div>`;
+      }).join('');
+      modal.querySelector('.drill-reserve').href = getReservationUrl(f, size);
+      modal.querySelector('.drill-reserve').onclick = () => trackClick(f.id);
+      modal.classList.add('open');
+      document.body.style.overflow = 'hidden';
+    }
+    function closeDrillDown() {
+      const m = document.getElementById('drillDownModal');
+      if (m) m.classList.remove('open');
+      document.body.style.overflow = '';
+    }
+    document.addEventListener('keydown', e => { if (e.key === 'Escape') closeDrillDown(); });
+
     // ── AI badge for cards ──
     function getAIBadges(f) {
       const insights = computeInsights();
@@ -1756,20 +1989,25 @@
       if (insights.bestValue?.facility?.id === f.id) badges.push({ label: 'Best Overall Value', cls: 'badge-ai' });
       if (insights.closest?.id === f.id) badges.push({ label: 'Closest to You', cls: 'badge-ai' });
       if (insights.topRated?.id === f.id) badges.push({ label: 'Top Rated', cls: 'badge-ai' });
-      const avgMin = allFacilities.reduce((s, x) => s + Math.min(...x.units.map(u => u.price)), 0) / allFacilities.length;
-      const thisMin = Math.min(...f.units.map(u => u.price));
-      if (thisMin === Math.min(...allFacilities.flatMap(x => x.units.map(u => u.price)))) badges.push({ label: 'Lowest Price', cls: 'badge-ai' });
+      const thisMin = safeMinPrice(f);
+      if (thisMin !== null) {
+        const allMins = allFacilities.map(safeMinPrice).filter(p => p !== null);
+        if (allMins.length && thisMin === Math.min(...allMins)) badges.push({ label: 'Lowest Price', cls: 'badge-ai' });
+      }
       return badges;
     }
 
     // ── Helpers ──
     function getAreaPriceRange() {
-      const allPrices = allFacilities.flatMap(f => f.units.map(u => u.price));
+      const allPrices = allFacilities.map(safeMinPrice).filter(p => p !== null);
+      if (!allPrices.length) return null;
       return { min: Math.min(...allPrices), max: Math.max(...allPrices) };
     }
     function getDealBadge(f) {
-      const avgMin = allFacilities.reduce((s, x) => s + Math.min(...x.units.map(u => u.price)), 0) / allFacilities.length;
-      const thisMin = Math.min(...f.units.map(u => u.price));
+      const allMins = allFacilities.map(safeMinPrice).filter(p => p !== null);
+      const thisMin = safeMinPrice(f);
+      if (!allMins.length || thisMin === null) return null;
+      const avgMin = allMins.reduce((s, x) => s + x, 0) / allMins.length;
       if (thisMin <= avgMin * 0.75) return 'Best Deal';
       if (thisMin <= avgMin * 0.9) return 'Great Price';
       return null;
@@ -1804,6 +2042,7 @@
       if (data.location) map.setView([data.location.lat, data.location.lng], 12);
       applyFilters();
       renderAIInsights(null);
+      enrichAllFacilities();
     }
 
     function showSearchError(msg) {
@@ -1849,10 +2088,13 @@
       document.getElementById('priceFilterBtn').classList.toggle('active', prices.length > 0);
 
       filteredFacilities = allFacilities.filter(f => {
-        if (sizes.length && !f.units.some(u => sizes.includes(u.size))) return false;
+        // Size/price filters only apply once pricing is loaded; before then, keep all so the user
+        // sees results immediately and we don't hide unpriced facilities by accident.
+        if (sizes.length && hasPricing(f) && !f.units.some(u => sizes.includes(u.size))) return false;
         if (features.length && !features.every(ft => f.features.includes(ft))) return false;
-        if (prices.length) {
-          const mp = Math.min(...f.units.map(u => u.price));
+        if (prices.length && hasPricing(f)) {
+          const mp = safeMinPrice(f);
+          if (mp === null) return true;
           if (!prices.some(r => r==='0-50'?mp<50 : r==='50-100'?mp>=50&&mp<=100 : r==='100-200'?mp>=100&&mp<=200 : mp>=200)) return false;
         }
         return true;
@@ -1865,10 +2107,16 @@
       filteredFacilities.sort((a,b) => {
         const sp = (b.sponsored ? 1 : 0) - (a.sponsored ? 1 : 0);
         if (sp !== 0) return sp;
-        return s==='distance' ? a.distance-b.distance :
-          s==='price_low' ? Math.min(...a.units.map(u=>u.price))-Math.min(...b.units.map(u=>u.price)) :
-          s==='price_high'? Math.min(...b.units.map(u=>u.price))-Math.min(...a.units.map(u=>u.price)) :
-          b.rating-a.rating;
+        if (s === 'price_low' || s === 'price_high') {
+          const aMin = safeMinPrice(a);
+          const bMin = safeMinPrice(b);
+          // Facilities without pricing yet sort to the end
+          if (aMin === null && bMin === null) return 0;
+          if (aMin === null) return 1;
+          if (bMin === null) return -1;
+          return s === 'price_low' ? aMin - bMin : bMin - aMin;
+        }
+        return s === 'distance' ? a.distance - b.distance : b.rating - a.rating;
       });
       if (currentView === 'list') renderResults();
       else { initSwipe(); }
@@ -1934,12 +2182,12 @@
       if (!window._aiParsed || !filteredFacilities.length) return '';
       const parsed = window._aiParsed;
       const top = filteredFacilities[0];
-      const minP = Math.min(...top.units.map(u => u.price));
-      const matchUnit = top.units.find(u => u.size === parsed.recommendedSize);
+      const minP = safeMinPrice(top);
+      const matchUnit = (top.units || []).find(u => u.size === parsed.recommendedSize);
 
       const reasons = [];
       if (matchUnit) reasons.push(`has ${matchUnit.size} units starting at $${matchUnit.price}/mo`);
-      else reasons.push(`starts at $${minP}/mo`);
+      else if (minP !== null) reasons.push(`starts at $${minP}/mo`);
       if (parseFloat(top.distance) <= 2) reasons.push(`only ${top.distance} mi away`);
       if (top.rating >= 4.5) reasons.push(`${top.rating}-star rated (${top.reviews} reviews)`);
       if (top.promo) reasons.push(`currently offering "${top.promo}"`);
@@ -1980,8 +2228,8 @@
       const aiRec = buildAIRecommendation();
       container.innerHTML = aiRec + filteredFacilities.map((f, i) => {
         const deal = getDealBadge(f);
-        const minP = Math.min(...f.units.map(u => u.price));
-        const pctPos = ((minP - pr.min) / (pr.max - pr.min)) * 100;
+        const minP = safeMinPrice(f);
+        const pctPos = (pr && minP !== null) ? ((minP - pr.min) / Math.max(pr.max - pr.min, 1)) * 100 : 50;
         const isFav = favorites.has(String(f.id));
         const inCompare = compareList.includes(String(f.id));
 
@@ -2012,20 +2260,20 @@
             ${getAIBadges(f).map(b => `<span class="badge ${b.cls}">${b.label}</span>`).join('')}
             ${deal ? `<span class="badge badge-deal">&#10003; ${deal}</span>` : ''}
           </div>
-          <div class="card-units">
-            ${f.units.map(u => `<a href="${getReservationUrl(f, u.size)}" target="_blank" rel="noopener" class="unit-pill" onclick="event.stopPropagation(); trackClick('${f.id}')"><div class="size">${u.size}</div><div class="fits">${(SIZE_INFO[u.size]||{}).fits||''}</div><div class="price">${u.estimated ? '~' : ''}$${u.price}/mo</div><div class="reserve-hint">Reserve →</div></a>`).join('')}
+          <div class="card-units" data-fac-id="${f.id}">
+            ${renderUnitsHTML(f)}
           </div>
-          ${f.estimatedPricing ? '<div style="font-size:0.65rem;color:var(--gray-400);margin:-6px 0 8px 2px;">~ Estimated pricing &mdash; verify on facility site</div>' : ''}
+          <div class="card-pricing-disclaimer" data-fac-id="${f.id}">${renderDisclaimerHTML(f)}</div>
           <div style="margin-bottom:10px;">
-            <span class="price-lock-badge" onclick="event.stopPropagation(); openPriceLock('${f.id}')">
+            ${hasPricing(f) ? `<span class="price-lock-badge" onclick="event.stopPropagation(); openPriceLock('${f.id}')">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0110 0v4"/></svg>
-              Price Lock available &mdash; from $${calcPriceLockFee(Math.min(...f.units.map(u=>u.price)), f.units.reduce((a,b)=>a.price<b.price?a:b).size)}
-            </span>
+              Price Lock available &mdash; from $${calcPriceLockFee(safeMinPrice(f), f.units.reduce((a,b)=>a.price<b.price?a:b).size)}
+            </span>` : ''}
           </div>
-          <div class="price-bar-wrap">
+          ${pr && minP !== null ? `<div class="price-bar-wrap">
             <div class="price-bar-label"><span>$${pr.min}/mo</span><span>Area avg</span><span>$${pr.max}/mo</span></div>
             <div class="price-bar"><div class="price-bar-marker" style="left:${pctPos}%"></div></div>
-          </div>
+          </div>` : ''}
           <div class="card-features">
             ${f.features.map(ft => `<span class="feature-tag">${FEATURE_LABELS[ft]||ft}</span>`).join('')}
           </div>
@@ -2099,9 +2347,10 @@
       const bounds = L.latLngBounds();
       filteredFacilities.forEach((f, i) => {
         const icon = L.divIcon({ className: '', html: `<div class="map-marker" data-index="${i}">${i+1}</div>`, iconSize:[32,32], iconAnchor:[16,16] });
+        const popupPrice = safeMinPrice(f);
         const mk = L.marker([f.lat,f.lng],{icon}).addTo(map).bindPopup(`
           <div class="popup-name">${esc(f.name)}</div>
-          <div class="popup-price">From $${Math.min(...f.units.map(u=>u.price))}/mo</div>
+          <div class="popup-price">${popupPrice !== null ? `From $${popupPrice}/mo` : 'Loading pricing...'}</div>
           <a href="${getReservationUrl(f, null)}" target="_blank" rel="noopener" class="popup-link" onclick="trackClick('${f.id}')">Reserve a Unit &rarr;</a>
         `);
         mk.on('click', () => highlightCard(i));
@@ -2118,6 +2367,7 @@
       document.querySelector(`.map-marker[data-index="${i}"]`)?.classList.add('active');
       map.setView([filteredFacilities[i].lat, filteredFacilities[i].lng], 15);
       markers[i]?.openPopup();
+      enrichPricing(i);
     }
     function hoverFacility(i) {
       document.querySelectorAll('.map-marker').forEach(m => m.classList.remove('active'));
@@ -2406,7 +2656,7 @@
           <div class="sr-card">
             <div class="sr-card-info">
               <h4>${esc(firstCard.name)}</h4>
-              <div class="sr-price">From $${Math.min(...firstCard.units.map(u=>u.price))}/mo</div>
+              <div class="sr-price">${safeMinPrice(firstCard) !== null ? `From $${safeMinPrice(firstCard)}/mo` : 'Pricing loading'}</div>
               <div class="sr-detail">${firstCard.distance} mi &middot; ${starsHTML(firstCard.rating)} ${firstCard.rating} (${firstCard.reviews})</div>
             </div>
             <a href="${firstCard.website || firstCard.mapsUrl || '#'}" target="_blank" rel="noopener" class="btn-primary" style="font-size:0.85rem;padding:10px 16px;" onclick="trackClick('${firstCard.id}')">
@@ -2428,7 +2678,7 @@
             <div class="sr-card ${hasGate ? 'blurred' : ''}">
               <div class="sr-card-info">
                 <h4>${esc(f.name)}</h4>
-                <div class="sr-price">From $${Math.min(...f.units.map(u=>u.price))}/mo</div>
+                <div class="sr-price">${safeMinPrice(f) !== null ? `From $${safeMinPrice(f)}/mo` : 'Pricing loading'}</div>
                 <div class="sr-detail">${f.distance} mi &middot; ${starsHTML(f.rating)} ${f.rating} (${f.reviews})</div>
               </div>
               <a href="${f.website || f.mapsUrl || '#'}" target="_blank" rel="noopener" class="btn-primary" style="font-size:0.85rem;padding:10px 16px;" onclick="trackClick('${f.id}')">
