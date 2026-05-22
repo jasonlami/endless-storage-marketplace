@@ -1971,7 +1971,7 @@
           </div>`;
       }).join('');
       modal.querySelector('.drill-reserve').href = getReservationUrl(f, size);
-      modal.querySelector('.drill-reserve').onclick = () => trackClick(f.id);
+      modal.querySelector('.drill-reserve').onclick = () => trackClick(f.id, { size, destination: getReservationUrl(f, size), kind: 'reserve_modal' });
       modal.classList.add('open');
       document.body.style.overflow = 'hidden';
     }
@@ -2704,7 +2704,32 @@
       document.querySelectorAll('.sr-card.blurred').forEach(c => c.classList.remove('blurred'));
     }
 
-    function trackClick(id) { console.log(`[Marketplace] Click-through: facility ${id} at ${new Date().toISOString()}`); }
+    function trackClick(id, opts) {
+      const meta = opts || {};
+      const f = allFacilities.find(x => String(x.id) === String(id));
+      const payload = {
+        facilityId: String(id),
+        facilityName: f?.name || '',
+        size: meta.size || '',
+        destination: meta.destination || '',
+        kind: meta.kind || 'reserve',
+      };
+      console.log(`[Marketplace] ${payload.kind} click: ${payload.facilityName || id} ${payload.size || ''}`.trim());
+      // Fire-and-forget; never block the user's navigation
+      try {
+        if (navigator.sendBeacon) {
+          const blob = new Blob([JSON.stringify(payload)], { type: 'application/json' });
+          navigator.sendBeacon('/api/click', blob);
+        } else {
+          fetch('/api/click', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload),
+            keepalive: true,
+          }).catch(() => {});
+        }
+      } catch (_) {}
+    }
 
     // ── Enter key ──
     document.getElementById('searchInput').addEventListener('keydown', e => { if (e.key === 'Enter') handleSearch(); });

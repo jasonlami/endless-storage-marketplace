@@ -17,6 +17,25 @@ const PRICING_TTL = 24 * 60 * 60 * 1000;
 app.use(express.static(path.join(__dirname, 'public')));
 app.use(express.json());
 
+// Structured request logging — parseable in Replit's log viewer
+app.use((req, res, next) => {
+  const start = Date.now();
+  res.on('finish', () => {
+    const ms = Date.now() - start;
+    // Only log API + non-static traffic; skip noisy /api/photo bytes
+    if (req.path.startsWith('/api/') && req.path !== '/api/photo') {
+      const q = req.query.q || req.query.name || '';
+      const qShort = String(q).slice(0, 60);
+      console.log(`[req] ${req.method} ${req.path} q="${qShort}" -> ${res.statusCode} ${ms}ms`);
+    }
+  });
+  next();
+});
+
+// In-memory click log (cleared on restart — wire to a persistent store later if needed)
+const clickLog = [];
+const CLICK_LOG_CAP = 5000;
+
 // ── Geocode a query (city, zip, address) to lat/lng ──
 async function geocode(query) {
   const url = `https://maps.googleapis.com/maps/api/geocode/json?address=${encodeURIComponent(query)}&key=${GOOGLE_API_KEY}`;
@@ -170,12 +189,22 @@ const ADMIN_FEE_RE = /\+?\s*(?:one-?time\s*)?\$\s?(\d{1,3})\s*(?:admin(?:istrati
 const REJECT_PATH_RE = /\/(blog|article|articles|news|resources|guides?|press|how-much|how-to|tips|advice|learn|insights|stories|posts?)\//i;
 const REJECT_KEYWORD_RE = /(cheap-storage|cheapest|storage-tips|storage-guide|how-much-does|comparing-storage|moving-tips)/i;
 
-// Known chain operator domains — require facility-specific path to trust
+// Known chain operator domains — require facility-specific path to trust.
+// Anything in this set: a different chain's pages cannot be trusted for THIS facility's data.
 const CHAIN_DOMAINS = new Set([
+  // Top-10 REITs and major chains
   'publicstorage.com', 'cubesmart.com', 'extraspace.com', 'extraspacestorage.com',
-  'lifestorage.com', 'storquest.com', 'uhaul.com', 'smartstopselfstorage.com',
-  'nsastorage.com', 'securespace.com', 'storagewest.com', 'sentinelstorage.com',
-  'simplystorage.com', 'storagepost.com', 'metrostorageusa.com'
+  'lifestorage.com', 'storquest.com', 'uhaul.com',
+  // Mid-tier chains
+  'smartstopselfstorage.com', 'nsastorage.com', 'securespace.com',
+  'storagewest.com', 'sentinelstorage.com', 'simplystorage.com',
+  'storagepost.com', 'metrostorageusa.com', 'compassselfstorage.com',
+  'safeguardit.com', 'storage-mart.com', 'stufstorage.com', 'stor-n-lock.com',
+  'primestorage.com', 'sentinelselfstorage.com', 'storeitall.com',
+  'devonselfstorage.com', 'atlasstoragecenters.com', 'easystorage.com',
+  // Tech-forward / newer entrants
+  'storeitnow.com', 'storagetoday.com', 'spaces.io',
+  'goldstoragesolutions.com', 'westsidestorage.com',
 ]);
 
 function getStreetNumber(facility) {
@@ -513,6 +542,35 @@ app.get('/api/pricing', async (req, res) => {
     console.error('Pricing error:', err);
     res.status(500).json({ error: 'Pricing lookup failed', prices: [], adminFee: null, fetchedAt: null });
   }
+});
+
+// ── Click-through tracking — measures marketplace performance ──
+app.post('/api/click', (req, res) => {
+  try {
+    const { facilityId, facilityName, size, destination, kind } = req.body || {};
+    if (!facilityId) return res.status(400).json({ error: 'facilityId required' });
+    const entry = {
+      ts: new Date().toISOString(),
+      facilityId: String(facilityId).slice(0, 100),
+      facilityName: (facilityName || '').slice(0, 120),
+      size: (size || '').slice(0, 12),
+      destination: (destination || '').slice(0, 500),
+      kind: (kind || 'reserve').slice(0, 24),
+      referer: (req.headers.referer || '').slice(0, 200),
+      ua: (req.headers['user-agent'] || '').slice(0, 200),
+    };
+    clickLog.push(entry);
+    if (clickLog.length > CLICK_LOG_CAP) clickLog.shift();
+    console.log(`[click] ${entry.kind} fac=${entry.facilityName} size=${entry.size}`);
+    res.json({ ok: true });
+  } catch (err) {
+    console.error('Click track error:', err);
+    res.status(500).json({ error: 'Click track failed' });
+  }
+});
+
+app.get('/api/click/recent', (req, res) => {
+  res.json({ count: clickLog.length, recent: clickLog.slice(-100).reverse() });
 });
 
 // ── Haversine distance (miles) ──
