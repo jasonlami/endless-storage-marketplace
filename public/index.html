@@ -2693,12 +2693,32 @@
 
     // ── Tracking ──
     function unlockSwipeMatches() {
-      const email = document.getElementById('srEmailInput').value.trim();
-      if (!email || !email.includes('@')) {
-        document.getElementById('srEmailInput').style.borderColor = '#ef4444';
+      const input = document.getElementById('srEmailInput');
+      const email = input.value.trim();
+      if (!email || !/^[^\s@]+@[^\s@]+\.[a-z]{2,}$/i.test(email)) {
+        input.style.borderColor = '#ef4444';
         return;
       }
-      console.log(`[Marketplace] Lead captured: ${email} at ${new Date().toISOString()}`);
+      input.style.borderColor = '';
+      // Persist lead to server (fire-and-forget; UI unlocks regardless)
+      const payload = {
+        email,
+        source: 'swipe_gate',
+        searchQuery: document.getElementById('aiSearchInput')?.value?.trim() ||
+                     document.getElementById('searchInput')?.value?.trim() || '',
+        savedFacilities: (typeof swipeSaved !== 'undefined' && Array.isArray(swipeSaved))
+          ? swipeSaved.map(f => f.id)
+          : [],
+      };
+      try {
+        fetch('/api/lead', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload),
+          keepalive: true,
+        }).catch(() => {});
+      } catch (_) {}
+      console.log(`[Marketplace] Lead captured: ${email}`);
       const gate = document.getElementById('srEmailGate');
       if (gate) gate.remove();
       document.querySelectorAll('.sr-card.blurred').forEach(c => c.classList.remove('blurred'));

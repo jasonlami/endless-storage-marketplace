@@ -32,9 +32,11 @@ app.use((req, res, next) => {
   next();
 });
 
-// In-memory click log (cleared on restart — wire to a persistent store later if needed)
+// In-memory click + lead log (cleared on restart — wire to persistent store later if needed)
 const clickLog = [];
 const CLICK_LOG_CAP = 5000;
+const leadLog = [];
+const LEAD_LOG_CAP = 5000;
 
 // ── Geocode a query (city, zip, address) to lat/lng ──
 async function geocode(query) {
@@ -571,6 +573,37 @@ app.post('/api/click', (req, res) => {
 
 app.get('/api/click/recent', (req, res) => {
   res.json({ count: clickLog.length, recent: clickLog.slice(-100).reverse() });
+});
+
+// ── Email lead capture ──
+// Cheap email validation — full validation belongs in whatever ESP we send to later
+const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[a-z]{2,}$/i;
+
+app.post('/api/lead', (req, res) => {
+  try {
+    const { email, source, searchQuery, savedFacilities } = req.body || {};
+    if (!email || !EMAIL_RE.test(email)) return res.status(400).json({ error: 'valid email required' });
+    const entry = {
+      ts: new Date().toISOString(),
+      email: email.slice(0, 120).toLowerCase(),
+      source: (source || 'swipe_gate').slice(0, 40),
+      searchQuery: (searchQuery || '').slice(0, 200),
+      savedFacilities: Array.isArray(savedFacilities) ? savedFacilities.slice(0, 25).map(String) : [],
+      referer: (req.headers.referer || '').slice(0, 200),
+      ua: (req.headers['user-agent'] || '').slice(0, 200),
+    };
+    leadLog.push(entry);
+    if (leadLog.length > LEAD_LOG_CAP) leadLog.shift();
+    console.log(`[lead] ${entry.email} src=${entry.source} q="${entry.searchQuery}"`);
+    res.json({ ok: true });
+  } catch (err) {
+    console.error('Lead capture error:', err);
+    res.status(500).json({ error: 'Lead capture failed' });
+  }
+});
+
+app.get('/api/lead/recent', (req, res) => {
+  res.json({ count: leadLog.length, recent: leadLog.slice(-50).reverse() });
 });
 
 // ── Haversine distance (miles) ──
