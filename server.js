@@ -1,18 +1,43 @@
 require('dotenv').config();
 const express = require('express');
 const fetch = require('node-fetch');
+const fs = require('fs');
 const path = require('path');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
 const GOOGLE_API_KEY = process.env.GOOGLE_PLACES_API_KEY || '';
 const SERPAPI_KEY = process.env.SERPAPI_KEY || '';
+const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || '';
 
 const searchCache = new Map();
 const CACHE_TTL = 10 * 60 * 1000;
 
 const pricingCache = new Map();
 const PRICING_TTL = 24 * 60 * 60 * 1000;
+
+// Data dir for persistent NDJSON logs (clicks, leads). Survives restarts on persistent filesystems.
+const DATA_DIR = path.join(__dirname, 'data');
+const CLICKS_FILE = path.join(DATA_DIR, 'clicks.ndjson');
+const LEADS_FILE = path.join(DATA_DIR, 'leads.ndjson');
+try { if (!fs.existsSync(DATA_DIR)) fs.mkdirSync(DATA_DIR, { recursive: true }); } catch (_) {}
+
+function appendNdjson(file, entry) {
+  try { fs.appendFile(file, JSON.stringify(entry) + '\n', () => {}); }
+  catch (e) { console.error('Persist error:', file, e.message); }
+}
+
+function loadNdjsonTail(file, cap) {
+  try {
+    if (!fs.existsSync(file)) return [];
+    const lines = fs.readFileSync(file, 'utf8').split('\n').filter(Boolean);
+    const tail = lines.slice(-cap);
+    return tail.map(l => { try { return JSON.parse(l); } catch (_) { return null; } }).filter(Boolean);
+  } catch (e) {
+    console.error('Load error:', file, e.message);
+    return [];
+  }
+}
 
 app.use(express.static(path.join(__dirname, 'public')));
 app.use(express.json());
@@ -32,11 +57,14 @@ app.use((req, res, next) => {
   next();
 });
 
-// In-memory click + lead log (cleared on restart — wire to persistent store later if needed)
-const clickLog = [];
+// In-memory click + lead log, seeded from disk on startup, appended to disk on every event
 const CLICK_LOG_CAP = 5000;
-const leadLog = [];
 const LEAD_LOG_CAP = 5000;
+const clickLog = loadNdjsonTail(CLICKS_FILE, CLICK_LOG_CAP);
+const leadLog = loadNdjsonTail(LEADS_FILE, LEAD_LOG_CAP);
+if (clickLog.length || leadLog.length) {
+  console.log(`Restored ${clickLog.length} clicks and ${leadLog.length} leads from disk`);
+}
 
 // ── Geocode a query (city, zip, address) to lat/lng ──
 async function geocode(query) {
@@ -563,6 +591,7 @@ app.post('/api/click', (req, res) => {
     };
     clickLog.push(entry);
     if (clickLog.length > CLICK_LOG_CAP) clickLog.shift();
+    appendNdjson(CLICKS_FILE, entry);
     console.log(`[click] ${entry.kind} fac=${entry.facilityName} size=${entry.size}`);
     res.json({ ok: true });
   } catch (err) {
@@ -594,6 +623,7 @@ app.post('/api/lead', (req, res) => {
     };
     leadLog.push(entry);
     if (leadLog.length > LEAD_LOG_CAP) leadLog.shift();
+    appendNdjson(LEADS_FILE, entry);
     console.log(`[lead] ${entry.email} src=${entry.source} q="${entry.searchQuery}"`);
     res.json({ ok: true });
   } catch (err) {
@@ -604,6 +634,133 @@ app.post('/api/lead', (req, res) => {
 
 app.get('/api/lead/recent', (req, res) => {
   res.json({ count: leadLog.length, recent: leadLog.slice(-50).reverse() });
+});
+
+// ── Admin dashboard ── (HTTP basic auth via ADMIN_PASSWORD env var) ──
+function requireAdmin(req, res, next) {
+  if (!ADMIN_PASSWORD) {
+    return res.status(503).send('Admin disabled — set ADMIN_PASSWORD env var to enable.');
+  }
+  const header = req.headers.authorization || '';
+  const m = header.match(/^Basic (.+)$/);
+  if (m) {
+    try {
+      const decoded = Buffer.from(m[1], 'base64').toString();
+      const pw = decoded.split(':')[1] || '';
+      if (pw === ADMIN_PASSWORD) return next();
+    } catch (_) {}
+  }
+  res.set('WWW-Authenticate', 'Basic realm="Endless Storage Admin"');
+  res.status(401).send('Authentication required');
+}
+
+function esc(s) {
+  return String(s || '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+}
+
+app.get('/admin', requireAdmin, (req, res) => {
+  const days = 7;
+  const since = Date.now() - days * 86400000;
+  const recentClicks = clickLog.filter(c => new Date(c.ts).getTime() >= since);
+  const recentLeads = leadLog.filter(l => new Date(l.ts).getTime() >= since);
+
+  const clickByFacility = {};
+  for (const c of recentClicks) {
+    const key = c.facilityName || c.facilityId || '(unknown)';
+    clickByFacility[key] = (clickByFacility[key] || 0) + 1;
+  }
+  const topFacilities = Object.entries(clickByFacility)
+    .sort((a, b) => b[1] - a[1])
+    .slice(0, 15);
+
+  const clickByKind = {};
+  for (const c of recentClicks) {
+    clickByKind[c.kind || 'reserve'] = (clickByKind[c.kind || 'reserve'] || 0) + 1;
+  }
+
+  res.send(`<!DOCTYPE html>
+<html><head>
+<meta charset="utf-8"><title>Endless Storage — Admin</title>
+<style>
+  body { font-family: -apple-system, system-ui, sans-serif; max-width: 1100px; margin: 24px auto; padding: 0 16px; color: #1a2e2a; }
+  h1 { margin-bottom: 4px; }
+  .sub { color: #6b7280; margin-bottom: 24px; font-size: 0.9rem; }
+  .cards { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-bottom: 24px; }
+  .card { background: #f0fdf4; border: 1px solid #86efac; border-radius: 10px; padding: 16px; }
+  .card .v { font-size: 1.8rem; font-weight: 800; color: #14532d; }
+  .card .l { font-size: 0.78rem; color: #166534; text-transform: uppercase; letter-spacing: 0.05em; margin-top: 2px; }
+  h2 { margin-top: 32px; border-bottom: 2px solid #d1fae5; padding-bottom: 6px; }
+  table { width: 100%; border-collapse: collapse; font-size: 0.88rem; margin-top: 12px; }
+  th { text-align: left; background: #f9fafb; padding: 8px 10px; border-bottom: 2px solid #e5e7eb; font-weight: 600; }
+  td { padding: 6px 10px; border-bottom: 1px solid #f3f4f6; vertical-align: top; }
+  tr:hover td { background: #fafafa; }
+  .ts { color: #6b7280; font-size: 0.78rem; white-space: nowrap; }
+  .small { font-size: 0.78rem; color: #6b7280; }
+  .kind { display: inline-block; padding: 2px 7px; border-radius: 4px; font-size: 0.72rem; font-weight: 600; background: #dbeafe; color: #1e40af; }
+  .kind-reserve, .kind-reserve_modal { background: #dcfce7; color: #14532d; }
+  .kind-call { background: #fef3c7; color: #92400e; }
+  .kind-unit_pill { background: #f3e8ff; color: #6b21a8; }
+  .empty { color: #9ca3af; font-style: italic; padding: 20px; text-align: center; }
+</style>
+</head><body>
+<h1>Endless Storage — Marketplace Admin</h1>
+<div class="sub">Last ${days} days of activity. Data persists across restarts (data/*.ndjson). Live counters below.</div>
+
+<div class="cards">
+  <div class="card"><div class="v">${recentClicks.length}</div><div class="l">Clicks (${days}d)</div></div>
+  <div class="card"><div class="v">${recentLeads.length}</div><div class="l">Leads (${days}d)</div></div>
+  <div class="card"><div class="v">${clickLog.length}</div><div class="l">Clicks (total)</div></div>
+  <div class="card"><div class="v">${leadLog.length}</div><div class="l">Leads (total)</div></div>
+</div>
+
+<h2>Click breakdown by kind</h2>
+<table>
+  <tr><th>Kind</th><th style="text-align:right">Count</th></tr>
+  ${Object.entries(clickByKind).sort((a,b) => b[1] - a[1]).map(([k, v]) =>
+    `<tr><td><span class="kind kind-${esc(k)}">${esc(k)}</span></td><td style="text-align:right">${v}</td></tr>`
+  ).join('') || '<tr><td colspan="2" class="empty">No clicks yet</td></tr>'}
+</table>
+
+<h2>Top facilities by clicks (${days}d)</h2>
+<table>
+  <tr><th>Facility</th><th style="text-align:right">Clicks</th></tr>
+  ${topFacilities.map(([name, count]) =>
+    `<tr><td>${esc(name)}</td><td style="text-align:right">${count}</td></tr>`
+  ).join('') || '<tr><td colspan="2" class="empty">No clicks yet</td></tr>'}
+</table>
+
+<h2>Recent leads</h2>
+<table>
+  <tr><th>When</th><th>Email</th><th>Source</th><th>Search</th><th>Saved</th></tr>
+  ${leadLog.slice(-30).reverse().map(l => `
+    <tr>
+      <td class="ts">${esc(l.ts)}</td>
+      <td><strong>${esc(l.email)}</strong></td>
+      <td><span class="kind">${esc(l.source)}</span></td>
+      <td>${esc(l.searchQuery) || '<span class="small">—</span>'}</td>
+      <td class="small">${(l.savedFacilities || []).length}</td>
+    </tr>
+  `).join('') || '<tr><td colspan="5" class="empty">No leads yet</td></tr>'}
+</table>
+
+<h2>Recent clicks (last 50)</h2>
+<table>
+  <tr><th>When</th><th>Facility</th><th>Size</th><th>Kind</th><th>Destination</th></tr>
+  ${clickLog.slice(-50).reverse().map(c => `
+    <tr>
+      <td class="ts">${esc(c.ts)}</td>
+      <td>${esc(c.facilityName) || esc(c.facilityId)}</td>
+      <td>${esc(c.size)}</td>
+      <td><span class="kind kind-${esc(c.kind)}">${esc(c.kind)}</span></td>
+      <td class="small">${c.destination ? '<a href="' + esc(c.destination) + '" target="_blank" rel="noopener">' + esc((c.destination || '').slice(0,60)) + '…</a>' : '—'}</td>
+    </tr>
+  `).join('') || '<tr><td colspan="5" class="empty">No clicks yet</td></tr>'}
+</table>
+
+<div class="sub" style="margin-top:40px">
+  Endless Storage Marketplace · ${new Date().toISOString()}
+</div>
+</body></html>`);
 });
 
 // ── Haversine distance (miles) ──
