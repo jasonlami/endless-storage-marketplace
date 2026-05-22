@@ -57,13 +57,16 @@ app.use((req, res, next) => {
   next();
 });
 
-// In-memory click + lead log, seeded from disk on startup, appended to disk on every event
+// In-memory click + lead + partner-lead logs, seeded from disk on startup, appended on every event
 const CLICK_LOG_CAP = 5000;
 const LEAD_LOG_CAP = 5000;
+const PARTNER_LEAD_LOG_CAP = 1000;
+const PARTNER_LEADS_FILE = path.join(DATA_DIR, 'partner-leads.ndjson');
 const clickLog = loadNdjsonTail(CLICKS_FILE, CLICK_LOG_CAP);
 const leadLog = loadNdjsonTail(LEADS_FILE, LEAD_LOG_CAP);
-if (clickLog.length || leadLog.length) {
-  console.log(`Restored ${clickLog.length} clicks and ${leadLog.length} leads from disk`);
+const partnerLeadLog = loadNdjsonTail(PARTNER_LEADS_FILE, PARTNER_LEAD_LOG_CAP);
+if (clickLog.length || leadLog.length || partnerLeadLog.length) {
+  console.log(`Restored ${clickLog.length} clicks, ${leadLog.length} leads, ${partnerLeadLog.length} partner-leads from disk`);
 }
 
 // ── Geocode a query (city, zip, address) to lat/lng ──
@@ -636,6 +639,43 @@ app.get('/api/lead/recent', (req, res) => {
   res.json({ count: leadLog.length, recent: leadLog.slice(-50).reverse() });
 });
 
+// ── Operator partner-lead capture ──
+// Operators claim/inquire about a listing on Endless Storage Marketplace.
+app.post('/api/partner-lead', (req, res) => {
+  try {
+    const { facilityId, facilityName, address, contactName, email, phone, role, unitCount, monthlyMarketingSpend, notes } = req.body || {};
+    if (!email || !EMAIL_RE.test(email)) return res.status(400).json({ error: 'valid email required' });
+    if (!facilityName) return res.status(400).json({ error: 'facilityName required' });
+    const entry = {
+      ts: new Date().toISOString(),
+      facilityId: String(facilityId || '').slice(0, 100),
+      facilityName: String(facilityName).slice(0, 120),
+      address: String(address || '').slice(0, 200),
+      contactName: String(contactName || '').slice(0, 80),
+      email: email.slice(0, 120).toLowerCase(),
+      phone: String(phone || '').slice(0, 30),
+      role: String(role || '').slice(0, 40),         // 'owner' | 'manager' | 'corporate' | 'other'
+      unitCount: String(unitCount || '').slice(0, 16),
+      monthlyMarketingSpend: String(monthlyMarketingSpend || '').slice(0, 16),
+      notes: String(notes || '').slice(0, 1000),
+      referer: (req.headers.referer || '').slice(0, 200),
+      ua: (req.headers['user-agent'] || '').slice(0, 200),
+    };
+    partnerLeadLog.push(entry);
+    if (partnerLeadLog.length > PARTNER_LEAD_LOG_CAP) partnerLeadLog.shift();
+    appendNdjson(PARTNER_LEADS_FILE, entry);
+    console.log(`[partner] ${entry.email} fac="${entry.facilityName}" role=${entry.role}`);
+    res.json({ ok: true });
+  } catch (err) {
+    console.error('Partner lead error:', err);
+    res.status(500).json({ error: 'Partner lead capture failed' });
+  }
+});
+
+app.get('/api/partner-lead/recent', (req, res) => {
+  res.json({ count: partnerLeadLog.length, recent: partnerLeadLog.slice(-50).reverse() });
+});
+
 // ── Admin dashboard ── (HTTP basic auth via ADMIN_PASSWORD env var) ──
 function requireAdmin(req, res, next) {
   if (!ADMIN_PASSWORD) {
@@ -663,6 +703,7 @@ app.get('/admin', requireAdmin, (req, res) => {
   const since = Date.now() - days * 86400000;
   const recentClicks = clickLog.filter(c => new Date(c.ts).getTime() >= since);
   const recentLeads = leadLog.filter(l => new Date(l.ts).getTime() >= since);
+  const recentPartnerLeads = partnerLeadLog.filter(l => new Date(l.ts).getTime() >= since);
 
   const clickByFacility = {};
   for (const c of recentClicks) {
@@ -708,9 +749,9 @@ app.get('/admin', requireAdmin, (req, res) => {
 
 <div class="cards">
   <div class="card"><div class="v">${recentClicks.length}</div><div class="l">Clicks (${days}d)</div></div>
-  <div class="card"><div class="v">${recentLeads.length}</div><div class="l">Leads (${days}d)</div></div>
+  <div class="card"><div class="v">${recentLeads.length}</div><div class="l">Consumer leads (${days}d)</div></div>
+  <div class="card" style="background:#fff7ed;border-color:#fb923c"><div class="v" style="color:#9a3412">${recentPartnerLeads.length}</div><div class="l" style="color:#9a3412">Operator leads (${days}d)</div></div>
   <div class="card"><div class="v">${clickLog.length}</div><div class="l">Clicks (total)</div></div>
-  <div class="card"><div class="v">${leadLog.length}</div><div class="l">Leads (total)</div></div>
 </div>
 
 <h2>Click breakdown by kind</h2>
@@ -729,7 +770,23 @@ app.get('/admin', requireAdmin, (req, res) => {
   ).join('') || '<tr><td colspan="2" class="empty">No clicks yet</td></tr>'}
 </table>
 
-<h2>Recent leads</h2>
+<h2>Operator partner leads</h2>
+<table>
+  <tr><th>When</th><th>Facility</th><th>Email</th><th>Role</th><th>Units</th><th>Spend</th><th>Notes</th></tr>
+  ${partnerLeadLog.slice(-30).reverse().map(p => `
+    <tr>
+      <td class="ts">${esc(p.ts)}</td>
+      <td><strong>${esc(p.facilityName)}</strong><div class="small">${esc(p.address)}</div></td>
+      <td>${esc(p.email)}${p.phone ? '<div class="small">' + esc(p.phone) + '</div>' : ''}</td>
+      <td><span class="kind">${esc(p.role) || '—'}</span></td>
+      <td class="small">${esc(p.unitCount) || '—'}</td>
+      <td class="small">${esc(p.monthlyMarketingSpend) || '—'}</td>
+      <td class="small">${esc((p.notes || '').slice(0, 120))}${(p.notes || '').length > 120 ? '…' : ''}</td>
+    </tr>
+  `).join('') || '<tr><td colspan="7" class="empty">No operator inquiries yet</td></tr>'}
+</table>
+
+<h2>Consumer leads</h2>
 <table>
   <tr><th>When</th><th>Email</th><th>Source</th><th>Search</th><th>Saved</th></tr>
   ${leadLog.slice(-30).reverse().map(l => `

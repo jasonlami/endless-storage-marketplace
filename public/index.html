@@ -646,6 +646,38 @@
     .drill-tag-promo { background: #fed7aa; color: #9a3412; }
     .drill-tag-web { background: #dbeafe; color: #1e40af; }
     .drill-tag-street { background: #fef3c7; color: #92400e; }
+
+    /* Operator claim CTA */
+    .claim-link { display: block; text-align: center; padding: 8px 6px; margin-top: 6px; font-size: 0.72rem; color: var(--gray-500); cursor: pointer; border-top: 1px dashed var(--gray-200); text-decoration: none; transition: color 0.15s; }
+    .claim-link:hover { color: var(--green-700); background: var(--green-50); border-radius: 0 0 var(--radius) var(--radius); }
+
+    /* Operator claim modal */
+    .claim-modal { display: none; position: fixed; inset: 0; z-index: 2100; }
+    .claim-modal.open { display: block; }
+    .claim-modal .drill-backdrop { position: absolute; inset: 0; background: rgba(0,0,0,0.5); }
+    .claim-panel { position: relative; max-width: 540px; width: calc(100% - 32px); max-height: 90vh; margin: 4vh auto; background: white; border-radius: 16px; box-shadow: 0 20px 60px rgba(0,0,0,0.3); display: flex; flex-direction: column; overflow: hidden; }
+    .claim-close { position: absolute; top: 12px; right: 16px; background: none; border: none; font-size: 1.8rem; color: var(--gray-500); cursor: pointer; line-height: 1; padding: 4px 8px; }
+    .claim-header { padding: 22px 24px 14px; border-bottom: 1px solid var(--gray-100); }
+    .claim-header h2 { font-size: 1.2rem; margin: 0 0 4px; color: var(--gray-900); padding-right: 30px; }
+    .claim-header .claim-sub { font-size: 0.88rem; color: var(--gray-600); }
+    .claim-body { padding: 18px 24px; overflow-y: auto; flex: 1; }
+    .claim-row { margin-bottom: 14px; }
+    .claim-row label { display: block; font-size: 0.78rem; font-weight: 600; color: var(--gray-700); margin-bottom: 4px; }
+    .claim-row input, .claim-row select, .claim-row textarea { width: 100%; padding: 10px 12px; border: 1px solid var(--gray-300); border-radius: 8px; font-size: 0.92rem; font-family: inherit; box-sizing: border-box; }
+    .claim-row input:focus, .claim-row select:focus, .claim-row textarea:focus { outline: none; border-color: var(--green-500); box-shadow: 0 0 0 3px rgba(34,197,94,0.15); }
+    .claim-row textarea { resize: vertical; min-height: 72px; }
+    .claim-row .row-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+    .claim-footer { padding: 16px 24px; border-top: 1px solid var(--gray-100); background: var(--gray-50); display: flex; gap: 10px; }
+    .claim-submit { flex: 1; background: var(--green-700); color: white; padding: 12px 16px; border-radius: 8px; border: none; font-weight: 700; font-size: 0.92rem; cursor: pointer; }
+    .claim-submit:hover { background: var(--green-900); }
+    .claim-submit:disabled { background: var(--gray-300); cursor: not-allowed; }
+    .claim-cancel { background: white; border: 1px solid var(--gray-300); padding: 12px 16px; border-radius: 8px; font-weight: 600; font-size: 0.92rem; cursor: pointer; }
+    .claim-status { margin-top: 8px; font-size: 0.85rem; padding: 10px 12px; border-radius: 8px; }
+    .claim-status.success { background: var(--green-50); color: var(--green-900); border: 1px solid var(--green-500); }
+    .claim-status.error { background: #fef2f2; color: #991b1b; border: 1px solid #f87171; }
+    @media (max-width: 768px) {
+      .claim-panel { margin: 0; max-height: 100vh; height: 100vh; width: 100%; border-radius: 0; }
+    }
     .units-loading { display: grid; grid-template-columns: repeat(3, 1fr); gap: 5px; margin-bottom: 10px; }
     .units-loading-skel { height: 52px; border-radius: var(--radius); background: linear-gradient(90deg, var(--gray-100) 0%, var(--gray-200) 50%, var(--gray-100) 100%); background-size: 200% 100%; animation: skeleton-shimmer 1.4s ease-in-out infinite; }
     @keyframes skeleton-shimmer { 0% { background-position: 200% 0; } 100% { background-position: -200% 0; } }
@@ -1980,7 +2012,158 @@
       if (m) m.classList.remove('open');
       document.body.style.overflow = '';
     }
-    document.addEventListener('keydown', e => { if (e.key === 'Escape') closeDrillDown(); });
+    document.addEventListener('keydown', e => {
+      if (e.key === 'Escape') { closeDrillDown(); closeClaimListing(); }
+    });
+
+    // ── Operator claim flow ──
+    // Pre-fills facility info from Google Places data, captures contact + intent, POSTs /api/partner-lead.
+    function openClaimListing(facilityId) {
+      const f = filteredFacilities.find(x => String(x.id) === String(facilityId)) ||
+                allFacilities.find(x => String(x.id) === String(facilityId));
+      if (!f) return;
+      let modal = document.getElementById('claimModal');
+      if (!modal) {
+        modal = document.createElement('div');
+        modal.id = 'claimModal';
+        modal.className = 'claim-modal';
+        modal.innerHTML = `
+          <div class="drill-backdrop" onclick="closeClaimListing()"></div>
+          <div class="claim-panel" role="dialog" aria-modal="true">
+            <button class="claim-close" onclick="closeClaimListing()" aria-label="Close">&times;</button>
+            <div class="claim-header">
+              <h2>Claim your listing</h2>
+              <div class="claim-sub">Get verified on Endless Storage Marketplace &mdash; lower fees than SpareFoot, AI-powered tools, and direct Sitelink integration.</div>
+            </div>
+            <form class="claim-body" id="claimForm" onsubmit="submitClaimListing(event)">
+              <div class="claim-row">
+                <label>Facility</label>
+                <input id="claimFacilityName" type="text" required>
+                <input id="claimFacilityId" type="hidden">
+                <input id="claimAddress" type="text" placeholder="Address" style="margin-top:6px">
+              </div>
+              <div class="claim-row">
+                <label>Your name *</label>
+                <input id="claimContactName" type="text" required placeholder="Full name">
+              </div>
+              <div class="claim-row row-2">
+                <div>
+                  <label>Email *</label>
+                  <input id="claimEmail" type="email" required placeholder="you@facility.com">
+                </div>
+                <div>
+                  <label>Phone</label>
+                  <input id="claimPhone" type="tel" placeholder="(xxx) xxx-xxxx">
+                </div>
+              </div>
+              <div class="claim-row row-2">
+                <div>
+                  <label>Your role</label>
+                  <select id="claimRole">
+                    <option value="">Select</option>
+                    <option value="owner">Owner</option>
+                    <option value="manager">Manager</option>
+                    <option value="corporate">Corporate / Regional</option>
+                    <option value="other">Other</option>
+                  </select>
+                </div>
+                <div>
+                  <label># Units</label>
+                  <input id="claimUnitCount" type="text" placeholder="e.g. 250">
+                </div>
+              </div>
+              <div class="claim-row">
+                <label>Monthly marketing spend (optional)</label>
+                <select id="claimSpend">
+                  <option value="">Prefer not to say</option>
+                  <option value="0-500">$0 – $500</option>
+                  <option value="500-1500">$500 – $1,500</option>
+                  <option value="1500-5000">$1,500 – $5,000</option>
+                  <option value="5000+">$5,000+</option>
+                </select>
+              </div>
+              <div class="claim-row">
+                <label>What are you looking for?</label>
+                <textarea id="claimNotes" placeholder="Tell us about your facility &mdash; what you'd like to update, lower fees, AI tools, Sitelink integration, etc."></textarea>
+              </div>
+              <div id="claimStatus"></div>
+            </form>
+            <div class="claim-footer">
+              <button type="button" class="claim-cancel" onclick="closeClaimListing()">Cancel</button>
+              <button type="submit" form="claimForm" class="claim-submit" id="claimSubmitBtn">Send inquiry</button>
+            </div>
+          </div>`;
+        document.body.appendChild(modal);
+      }
+      // Pre-fill facility info from Google Places data
+      modal.querySelector('#claimFacilityName').value = f.name || '';
+      modal.querySelector('#claimFacilityId').value = f.id || '';
+      modal.querySelector('#claimAddress').value = [f.address, f.city, f.state, f.zip].filter(Boolean).join(', ');
+      // Reset form state
+      ['claimContactName','claimEmail','claimPhone','claimRole','claimUnitCount','claimSpend','claimNotes'].forEach(id => {
+        const el = modal.querySelector('#' + id);
+        if (el) el.value = '';
+      });
+      modal.querySelector('#claimStatus').innerHTML = '';
+      modal.querySelector('#claimSubmitBtn').disabled = false;
+      modal.querySelector('#claimSubmitBtn').textContent = 'Send inquiry';
+      modal.classList.add('open');
+      document.body.style.overflow = 'hidden';
+      setTimeout(() => modal.querySelector('#claimContactName').focus(), 50);
+    }
+
+    function closeClaimListing() {
+      const m = document.getElementById('claimModal');
+      if (m) m.classList.remove('open');
+      document.body.style.overflow = '';
+    }
+
+    async function submitClaimListing(e) {
+      e.preventDefault();
+      const modal = document.getElementById('claimModal');
+      const btn = modal.querySelector('#claimSubmitBtn');
+      const status = modal.querySelector('#claimStatus');
+      const payload = {
+        facilityId: modal.querySelector('#claimFacilityId').value,
+        facilityName: modal.querySelector('#claimFacilityName').value.trim(),
+        address: modal.querySelector('#claimAddress').value.trim(),
+        contactName: modal.querySelector('#claimContactName').value.trim(),
+        email: modal.querySelector('#claimEmail').value.trim(),
+        phone: modal.querySelector('#claimPhone').value.trim(),
+        role: modal.querySelector('#claimRole').value,
+        unitCount: modal.querySelector('#claimUnitCount').value.trim(),
+        monthlyMarketingSpend: modal.querySelector('#claimSpend').value,
+        notes: modal.querySelector('#claimNotes').value.trim(),
+      };
+      btn.disabled = true;
+      btn.textContent = 'Sending...';
+      status.className = '';
+      status.innerHTML = '';
+      try {
+        const res = await fetch('/api/partner-lead', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload),
+        });
+        const data = await res.json();
+        if (res.ok && data.ok) {
+          status.className = 'claim-status success';
+          status.innerHTML = `<strong>Thanks!</strong> We'll reach out within 1 business day.`;
+          btn.textContent = 'Sent ✓';
+          setTimeout(closeClaimListing, 2200);
+        } else {
+          status.className = 'claim-status error';
+          status.textContent = data.error || 'Submission failed. Please try again.';
+          btn.disabled = false;
+          btn.textContent = 'Send inquiry';
+        }
+      } catch (err) {
+        status.className = 'claim-status error';
+        status.textContent = 'Network error. Please try again.';
+        btn.disabled = false;
+        btn.textContent = 'Send inquiry';
+      }
+    }
 
     // ── AI badge for cards ──
     function getAIBadges(f) {
@@ -2289,6 +2472,7 @@
               ${inCompare ? '&#10003; Added' : '+ Compare'}
             </button>
           </div>
+          <a class="claim-link" onclick="event.stopPropagation(); openClaimListing('${f.id}')">Operator? Claim this listing &rarr;</a>
           </div>
         </div>`;
       }).join('');
